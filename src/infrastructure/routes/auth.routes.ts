@@ -195,13 +195,21 @@ export function createAuthRoutes(): Router {
   // Rutas protegidas (requieren autenticación)
   /**
    * @swagger
-   * /auth/profile:
+   * /auth/profile/{userId}:
    *   get:
    *     tags: [Protected]
-   *     summary: Obtiene el perfil del usuario autenticado
-   *     description: Devuelve la información del usuario actualmente autenticado
+   *     summary: Obtiene el perfil de un usuario por ID
+   *     description: Devuelve la información del usuario especificado por ID
    *     security:
    *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: userId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: ID del usuario a consultar
+   *         example: "abc123def456"
    *     responses:
    *       200:
    *         description: Perfil del usuario obtenido exitosamente
@@ -209,47 +217,88 @@ export function createAuthRoutes(): Router {
    *           application/json:
    *             schema:
    *               $ref: '#/components/schemas/UserProfile'
+   *       400:
+   *         description: ID de usuario requerido o inválido
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ErrorResponse'
    *       401:
    *         description: Token de autorización requerido o inválido
    *         content:
    *           application/json:
    *             schema:
    *               $ref: '#/components/schemas/ErrorResponse'
-   *             examples:
-   *               missing_token:
-   *                 summary: Token faltante
-   *                 value:
-   *                   data: null
-   *                   message: "Token de autorización requerido"
-   *                   status: "error"
-   *                   error:
-   *                     code: "AUTHORIZATION_REQUIRED"
-   *               invalid_token:
-   *                 summary: Token inválido
-   *                 value:
-   *                   data: null
-   *                   message: "Token de autorización inválido"
-   *                   status: "error"
-   *                   error:
-   *                     code: "INVALID_TOKEN"
-   *               expired_token:
-   *                 summary: Token expirado
-   *                 value:
-   *                   data: null
-   *                   message: "Token de autorización expirado"
-   *                   status: "error"
-   *                   error:
-   *                     code: "TOKEN_EXPIRED"
+   *       404:
+   *         description: Usuario no encontrado
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ErrorResponse'
+   *       500:
+   *         description: Error interno del servidor
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ErrorResponse'
    */
-  router.get('/profile', authMiddleware, (req: AuthenticatedRequest, res) => {
-    res.json({
-      data: {
-        user: req.user,
-        message: 'Perfil obtenido exitosamente'
-      },
-      message: 'Acceso autorizado',
-      status: 'success'
-    });
+  router.get('/profile/:userId', authMiddleware, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { userId } = req.params;
+      
+      if (!userId) {
+        return res.status(400).json({
+          data: null,
+          message: 'ID de usuario requerido',
+          status: 'error',
+          error: {
+            code: 'USER_ID_REQUIRED'
+          }
+        });
+      }
+
+      // Buscar el usuario en el repositorio
+      const user = await userRepository.findByEmail(userId);
+      
+      if (!user) {
+        return res.status(404).json({
+          data: null,
+          message: 'Usuario no encontrado',
+          status: 'error',
+          error: {
+            code: 'USER_NOT_FOUND'
+          }
+        });
+      }
+
+      res.json({
+        data: {
+          user: {
+            id: user.id,
+            nombre: user.nombre,
+            correo: user.correo,
+            tipo_usuario: user.tipo_usuario,
+            firebase_uid: user.firebase_uid,
+            codigo_institucion: user.codigo_institucion,
+            created_at: user.created_at,
+            updated_at: user.updated_at
+          },
+          message: 'Perfil obtenido exitosamente'
+        },
+        message: 'Acceso autorizado',
+        status: 'success'
+      });
+    } catch (error) {
+      console.error('Error al obtener perfil:', error);
+      res.status(500).json({
+        data: null,
+        message: 'Error interno del servidor',
+        status: 'error',
+        error: {
+          code: 'INTERNAL_SERVER_ERROR'
+        }
+      });
+    }
   });
 
   // Ruta solo para tutores
