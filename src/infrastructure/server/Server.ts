@@ -23,7 +23,7 @@ export class Server {
 
   private middlewares(): void {
     // Configurar trust proxy para rate limiting
-    this.app.set('trust proxy', 1);
+    this.app.set('trust proxy', true);
     
     // Seguridad
     this.app.use(helmet());
