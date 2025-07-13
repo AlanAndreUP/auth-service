@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import * as jwt from 'jsonwebtoken';
 import { ErrorResponse } from '@shared/types/response.types';
+import { FirebaseService } from '@application/services/Firebase.service';
+import { MongoUserRepository } from '@infrastructure/repositories/MongoUser.repository';
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -10,7 +11,7 @@ export interface AuthenticatedRequest extends Request {
   };
 }
 
-export const authMiddleware = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+export const authMiddleware = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
     
@@ -42,67 +43,89 @@ export const authMiddleware = (req: AuthenticatedRequest, res: Response, next: N
       return;
     }
 
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) {
-      console.error('JWT_SECRET no está configurado');
-      const errorResponse: ErrorResponse = {
-        data: null,
-        message: 'Error de configuración del servidor',
-        status: 'error',
-        error: {
-          code: 'SERVER_CONFIGURATION_ERROR'
-        }
-      };
-      res.status(500).json(errorResponse);
-      return;
-    }
-
-    const decoded = jwt.verify(token, jwtSecret) as jwt.JwtPayload;
+    // Validar token de Firebase
+    const firebaseService = FirebaseService.getInstance();
+    const userRepository = new MongoUserRepository();
     
-    if (!decoded.userId || !decoded.email || !decoded.userType) {
+    try {
+      const decodedToken = await firebaseService.verifyIdToken(token);
+      
+      if (!decodedToken.uid || !decodedToken.email) {
+        const errorResponse: ErrorResponse = {
+          data: null,
+          message: 'Token de Firebase inválido',
+          status: 'error',
+          error: {
+            code: 'INVALID_FIREBASE_TOKEN'
+          }
+        };
+        res.status(401).json(errorResponse);
+        return;
+      }
+
+      // Buscar el usuario en la base de datos
+      const user = await userRepository.findByFirebaseUid(decodedToken.uid);
+      
+      if (!user) {
+        const errorResponse: ErrorResponse = {
+          data: null,
+          message: 'Usuario no encontrado en la base de datos',
+          status: 'error',
+          error: {
+            code: 'USER_NOT_FOUND'
+          }
+        };
+        res.status(404).json(errorResponse);
+        return;
+      }
+
+      req.user = {
+        userId: user.id,
+        email: user.correo,
+        userType: user.tipo_usuario
+      };
+
+      next();
+    } catch (firebaseError) {
+      console.error('Error al verificar token de Firebase:', firebaseError);
+      
+      let errorMessage = 'Token de Firebase inválido';
+      let errorCode = 'INVALID_FIREBASE_TOKEN';
+
+      if (firebaseError instanceof Error) {
+        if (firebaseError.message.includes('expired')) {
+          errorMessage = 'Token de Firebase expirado';
+          errorCode = 'FIREBASE_TOKEN_EXPIRED';
+        } else if (firebaseError.message.includes('revoked')) {
+          errorMessage = 'Token de Firebase revocado';
+          errorCode = 'FIREBASE_TOKEN_REVOKED';
+        }
+      }
+
       const errorResponse: ErrorResponse = {
         data: null,
-        message: 'Token de autorización inválido',
+        message: errorMessage,
         status: 'error',
         error: {
-          code: 'INVALID_TOKEN_PAYLOAD'
+          code: errorCode
         }
       };
+
       res.status(401).json(errorResponse);
-      return;
     }
-
-    req.user = {
-      userId: decoded.userId,
-      email: decoded.email,
-      userType: decoded.userType
-    };
-
-    next();
   } catch (error) {
     console.error('Error en middleware de autenticación:', error);
     
-    let errorMessage = 'Token de autorización inválido';
-    let errorCode = 'INVALID_TOKEN';
-
-    if (error instanceof jwt.TokenExpiredError) {
-      errorMessage = 'Token de autorización expirado';
-      errorCode = 'TOKEN_EXPIRED';
-    } else if (error instanceof jwt.JsonWebTokenError) {
-      errorMessage = 'Token de autorización malformado';
-      errorCode = 'MALFORMED_TOKEN';
-    }
-
     const errorResponse: ErrorResponse = {
       data: null,
-      message: errorMessage,
+      message: 'Error interno del servidor',
       status: 'error',
       error: {
-        code: errorCode
+        code: 'INTERNAL_SERVER_ERROR'
       }
     };
 
-    res.status(401).json(errorResponse);
+    res.status(500).json(errorResponse);
   }
 };
 
