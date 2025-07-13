@@ -105,10 +105,16 @@ Thumbs.db
 # Documentación generada (opcional)
 docs/swagger.json
 
-# Firebase
+# Firebase - CRÍTICO PARA SEGURIDAD
 .firebase/
 firebase-debug.log
 firebase-debug.*.log
+# Archivos de credenciales de Firebase (service account keys)
+*firebase-adminsdk*.json
+*serviceAccountKey*.json
+*firebase-service-account*.json
+firebase-adminsdk-*.json
+*-firebase-adminsdk-*.json
 
 # Archivos de backup
 *.backup
