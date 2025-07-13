@@ -2,6 +2,7 @@ import { UserRepository } from '@domain/repositories/UserRepository.interface';
 import { User } from '@domain/entities/User.entity';
 import { EmailService, LoginNotificationData, RegistroNotificationData } from '@application/services/Email.service';
 import { AuthValidateRequest, AuthValidateResponse } from '@shared/types/response.types';
+import { InstitutionCode } from '@domain/value-objects/InstitutionCode';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -13,7 +14,7 @@ export class ValidateAuthUseCase {
   ) {}
 
   async execute(request: AuthValidateRequest, ip: string, userAgent: string): Promise<AuthValidateResponse> {
-    const { correo, contraseña, tipo_usuario } = request;
+    const { correo, contraseña, codigo_institucion } = request;
 
     // Buscar usuario existente
     const existingUser = await this.userRepository.findByEmail(correo);
@@ -64,18 +65,36 @@ export class ValidateAuthUseCase {
         userType: existingUser.tipo_usuario,
         userId: existingUser.id,
         token,
-        nombre: existingUser.nombre
+        nombre: existingUser.nombre,
+        codigoInstitucion: existingUser.codigo_institucion,
+        institucionNombre: this.getInstitutionName(existingUser.codigo_institucion)
       };
     } else {
       // Nuevo usuario - proceso de registro
-      // Para el método tradicional, usamos el correo como nombre por defecto
+      // Determinar tipo de usuario basado en el código de institución
+      let tipoUsuario: 'tutor' | 'alumno' = 'alumno'; // Por defecto alumno
+      let codigoInstitucionFinal: string | undefined;
+      
+      if (codigo_institucion && codigo_institucion.trim()) {
+        try {
+          const institutionCodeVO = InstitutionCode.create(codigo_institucion);
+          tipoUsuario = institutionCodeVO.getAssociatedUserType();
+          codigoInstitucionFinal = institutionCodeVO.value;
+        } catch (error) {
+          // Si el código es inválido, se mantiene como alumno
+          console.warn('Código de institución inválido:', codigo_institucion);
+        }
+      }
+      
       const hashedPassword = await bcrypt.hash(contraseña, 10);
       
       const newUser = User.create(
-        correo, // Usar correo como nombre por defecto
+        correo, // Usar correo como nombre por defecto en método tradicional
         correo,
         hashedPassword,
-        tipo_usuario
+        tipoUsuario,
+        undefined, // sin firebase_uid
+        codigoInstitucionFinal
       );
       
       const savedUser = await this.userRepository.save(newUser);
@@ -114,8 +133,23 @@ export class ValidateAuthUseCase {
         userType: savedUser.tipo_usuario,
         userId: savedUser.id,
         token,
-        nombre: savedUser.nombre
+        nombre: savedUser.nombre,
+        codigoInstitucion: savedUser.codigo_institucion,
+        institucionNombre: this.getInstitutionName(savedUser.codigo_institucion)
       };
+    }
+  }
+
+  private getInstitutionName(codigoInstitucion?: string): string {
+    if (!codigoInstitucion) {
+      return 'Sin institución';
+    }
+    
+    try {
+      const institutionCode = InstitutionCode.create(codigoInstitucion);
+      return institutionCode.getInstitutionName();
+    } catch {
+      return 'Sin institución';
     }
   }
 } 

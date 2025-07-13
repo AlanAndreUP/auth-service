@@ -18,6 +18,7 @@ export class MongoUserRepository implements UserRepository {
         userDoc.contraseña,
         userDoc.tipo_usuario,
         userDoc.firebase_uid,
+        userDoc.codigo_institucion,
         userDoc.created_at,
         userDoc.updated_at,
         userDoc.deleted_at
@@ -43,6 +44,7 @@ export class MongoUserRepository implements UserRepository {
         userDoc.contraseña,
         userDoc.tipo_usuario,
         userDoc.firebase_uid,
+        userDoc.codigo_institucion,
         userDoc.created_at,
         userDoc.updated_at,
         userDoc.deleted_at
@@ -50,6 +52,31 @@ export class MongoUserRepository implements UserRepository {
     } catch (error) {
       console.error('Error finding user by Firebase UID:', error);
       throw new Error('Error al buscar usuario por Firebase UID');
+    }
+  }
+
+  async findByInstitutionCode(institutionCode: string): Promise<User[]> {
+    try {
+      const userDocs = await UserModel.find({ 
+        codigo_institucion: institutionCode.toUpperCase(), 
+        deleted_at: { $exists: false } 
+      });
+      
+      return userDocs.map(userDoc => new User(
+        userDoc._id.toString(),
+        userDoc.nombre,
+        userDoc.correo,
+        userDoc.contraseña,
+        userDoc.tipo_usuario,
+        userDoc.firebase_uid,
+        userDoc.codigo_institucion,
+        userDoc.created_at,
+        userDoc.updated_at,
+        userDoc.deleted_at
+      ));
+    } catch (error) {
+      console.error('Error finding users by institution code:', error);
+      throw new Error('Error al buscar usuarios por código de institución');
     }
   }
 
@@ -62,6 +89,7 @@ export class MongoUserRepository implements UserRepository {
         contraseña: user.contraseña,
         tipo_usuario: user.tipo_usuario,
         firebase_uid: user.firebase_uid,
+        codigo_institucion: user.codigo_institucion,
         created_at: user.created_at,
         updated_at: user.updated_at,
         deleted_at: user.deleted_at
@@ -76,6 +104,7 @@ export class MongoUserRepository implements UserRepository {
         userDoc.contraseña,
         userDoc.tipo_usuario,
         userDoc.firebase_uid,
+        userDoc.codigo_institucion,
         userDoc.created_at,
         userDoc.updated_at,
         userDoc.deleted_at
@@ -96,6 +125,7 @@ export class MongoUserRepository implements UserRepository {
           contraseña: user.contraseña,
           tipo_usuario: user.tipo_usuario,
           firebase_uid: user.firebase_uid,
+          codigo_institucion: user.codigo_institucion,
           updated_at: new Date(),
           deleted_at: user.deleted_at
         },
@@ -113,6 +143,7 @@ export class MongoUserRepository implements UserRepository {
         userDoc.contraseña,
         userDoc.tipo_usuario,
         userDoc.firebase_uid,
+        userDoc.codigo_institucion,
         userDoc.created_at,
         userDoc.updated_at,
         userDoc.deleted_at

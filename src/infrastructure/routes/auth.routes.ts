@@ -28,8 +28,12 @@ export function createAuthRoutes(): Router {
    * /auth/validate:
    *   post:
    *     tags: [Authentication]
-   *     summary: Valida usuario desde Firebase y maneja registro/login tradicional
-   *     description: Valida un usuario existente o registra uno nuevo usando email y contraseña
+   *     summary: Registro y login tradicional con código de institución
+   *     description: |
+   *       Valida un usuario existente o registra uno nuevo usando email y contraseña.
+   *       El tipo de usuario se determina automáticamente por el código de institución:
+   *       - Si `codigo_institucion` es "TUTOR": usuario será tutor
+   *       - Si `codigo_institucion` es cualquier otro valor o está vacío: usuario será alumno
    *     requestBody:
    *       required: true
    *       content:
@@ -39,7 +43,6 @@ export function createAuthRoutes(): Router {
    *             required:
    *               - correo
    *               - contraseña
-   *               - tipo_usuario
    *             properties:
    *               correo:
    *                 type: string
@@ -51,11 +54,30 @@ export function createAuthRoutes(): Router {
    *                 minLength: 6
    *                 description: Contraseña del usuario
    *                 example: "password123"
-   *               tipo_usuario:
+   *               codigo_institucion:
    *                 type: string
-   *                 enum: [tutor, alumno]
-   *                 description: Tipo de usuario
-   *                 example: "tutor"
+   *                 minLength: 2
+   *                 maxLength: 20
+   *                 description: Código de institución (opcional). "TUTOR" = tutor, otros = alumno
+   *                 example: "TUTOR"
+   *           examples:
+   *             tutor:
+   *               summary: Registro/Login de Tutor
+   *               value:
+   *                 correo: "tutor@example.com"
+   *                 contraseña: "password123"
+   *                 codigo_institucion: "TUTOR"
+   *             alumno:
+   *               summary: Registro/Login de Alumno
+   *               value:
+   *                 correo: "alumno@example.com"
+   *                 contraseña: "password123"
+   *                 codigo_institucion: "ESTUDIANTE"
+   *             alumno_sin_codigo:
+   *               summary: Registro/Login de Alumno (sin código)
+   *               value:
+   *                 correo: "alumno@example.com"
+   *                 contraseña: "password123"
    *     responses:
    *       200:
    *         description: Usuario autenticado exitosamente (login)
@@ -89,8 +111,12 @@ export function createAuthRoutes(): Router {
    * /auth/firebase:
    *   post:
    *     tags: [Authentication]
-   *     summary: Autenticación con Firebase
-   *     description: Autentica o registra un usuario usando Firebase Authentication
+   *     summary: Autenticación con Firebase y código de institución
+   *     description: |
+   *       Autentica o registra un usuario usando Firebase Authentication.
+   *       El tipo de usuario se determina automáticamente por el código de institución:
+   *       - Si `codigo_institucion` es "TUTOR": usuario será tutor
+   *       - Si `codigo_institucion` es cualquier otro valor o está vacío: usuario será alumno
    *     requestBody:
    *       required: true
    *       content:
@@ -101,7 +127,6 @@ export function createAuthRoutes(): Router {
    *               - firebase_token
    *               - nombre
    *               - correo
-   *               - tipo_usuario
    *             properties:
    *               firebase_token:
    *                 type: string
@@ -118,11 +143,27 @@ export function createAuthRoutes(): Router {
    *                 format: email
    *                 description: Email del usuario
    *                 example: "juan@example.com"
-   *               tipo_usuario:
+   *               codigo_institucion:
    *                 type: string
-   *                 enum: [tutor, alumno]
-   *                 description: Tipo de usuario
-   *                 example: "alumno"
+   *                 minLength: 2
+   *                 maxLength: 20
+   *                 description: Código de institución (opcional). "TUTOR" = tutor, otros = alumno
+   *                 example: "TUTOR"
+   *           examples:
+   *             tutor:
+   *               summary: Registro/Login de Tutor con Firebase
+   *               value:
+   *                 firebase_token: "eyJhbGciOiJSUzI1NiIs..."
+   *                 nombre: "María González"
+   *                 correo: "maria@example.com"
+   *                 codigo_institucion: "TUTOR"
+   *             alumno:
+   *               summary: Registro/Login de Alumno con Firebase
+   *               value:
+   *                 firebase_token: "eyJhbGciOiJSUzI1NiIs..."
+   *                 nombre: "Carlos López"
+   *                 correo: "carlos@example.com"
+   *                 codigo_institucion: "EST001"
    *     responses:
    *       200:
    *         description: Usuario autenticado exitosamente con Firebase (login)

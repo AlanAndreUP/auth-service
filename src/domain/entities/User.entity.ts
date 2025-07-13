@@ -8,6 +8,7 @@ export class User {
     public readonly contraseña: string,
     public readonly tipo_usuario: TipoUsuario,
     public readonly firebase_uid?: string,
+    public readonly codigo_institucion?: string,
     public readonly created_at: Date = new Date(),
     public readonly updated_at: Date = new Date(),
     public readonly deleted_at?: Date
@@ -19,6 +20,7 @@ export class User {
     contraseña: string,
     tipo_usuario: TipoUsuario,
     firebase_uid?: string,
+    codigo_institucion?: string,
     id?: string
   ): User {
     return new User(
@@ -27,7 +29,8 @@ export class User {
       correo,
       contraseña,
       tipo_usuario,
-      firebase_uid
+      firebase_uid,
+      codigo_institucion
     );
   }
 
@@ -47,6 +50,10 @@ export class User {
     return this.tipo_usuario === 'alumno';
   }
 
+  hasInstitutionCode(): boolean {
+    return this.codigo_institucion !== undefined && this.codigo_institucion !== null;
+  }
+
   toJSON() {
     return {
       id: this.id,
@@ -54,6 +61,7 @@ export class User {
       correo: this.correo,
       tipo_usuario: this.tipo_usuario,
       firebase_uid: this.firebase_uid,
+      codigo_institucion: this.codigo_institucion,
       created_at: this.created_at,
       updated_at: this.updated_at,
       deleted_at: this.deleted_at

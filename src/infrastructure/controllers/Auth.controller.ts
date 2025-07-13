@@ -19,9 +19,9 @@ export class AuthController {
       'string.min': 'La contraseña debe tener al menos 6 caracteres',
       'any.required': 'La contraseña es requerida'
     }),
-    tipo_usuario: Joi.string().valid('tutor', 'alumno').required().messages({
-      'any.only': 'El tipo de usuario debe ser tutor o alumno',
-      'any.required': 'El tipo de usuario es requerido'
+    codigo_institucion: Joi.string().min(2).max(20).optional().messages({
+      'string.min': 'El código de institución debe tener al menos 2 caracteres',
+      'string.max': 'El código de institución no puede tener más de 20 caracteres'
     })
   });
 
@@ -38,9 +38,9 @@ export class AuthController {
       'string.email': 'El correo debe tener un formato válido',
       'any.required': 'El correo es requerido'
     }),
-    tipo_usuario: Joi.string().valid('tutor', 'alumno').required().messages({
-      'any.only': 'El tipo de usuario debe ser tutor o alumno',
-      'any.required': 'El tipo de usuario es requerido'
+    codigo_institucion: Joi.string().min(2).max(20).optional().messages({
+      'string.min': 'El código de institución debe tener al menos 2 caracteres',
+      'string.max': 'El código de institución no puede tener más de 20 caracteres'
     })
   });
 

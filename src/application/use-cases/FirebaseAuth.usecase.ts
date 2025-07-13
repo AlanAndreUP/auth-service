@@ -3,6 +3,7 @@ import { User } from '@domain/entities/User.entity';
 import { FirebaseService } from '@application/services/Firebase.service';
 import { EmailService, LoginNotificationData, RegistroNotificationData } from '@application/services/Email.service';
 import { FirebaseAuthRequest, FirebaseAuthResponse } from '@shared/types/response.types';
+import { InstitutionCode } from '@domain/value-objects/InstitutionCode';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
@@ -15,7 +16,7 @@ export class FirebaseAuthUseCase {
   ) {}
 
   async execute(request: FirebaseAuthRequest, ip: string, userAgent: string): Promise<FirebaseAuthResponse> {
-    const { firebase_token, nombre, correo, tipo_usuario } = request;
+    const { firebase_token, nombre, correo, codigo_institucion } = request;
 
     // Verificar token de Firebase
     const decodedToken = await this.firebaseService.verifyIdToken(firebase_token);
@@ -39,6 +40,7 @@ export class FirebaseAuthUseCase {
           existingUser.contraseña,
           existingUser.tipo_usuario,
           decodedToken.uid,
+          existingUser.codigo_institucion,
           existingUser.id
         );
         
@@ -89,10 +91,27 @@ export class FirebaseAuthUseCase {
         token,
         nombre: existingUser.nombre,
         correo: existingUser.correo,
-        firebase_uid: existingUser.firebase_uid || decodedToken.uid
+        firebase_uid: existingUser.firebase_uid || decodedToken.uid,
+        codigoInstitucion: existingUser.codigo_institucion,
+        institucionNombre: this.getInstitutionName(existingUser.codigo_institucion)
       };
     } else {
       // Nuevo usuario - proceso de registro
+      // Determinar tipo de usuario basado en el código de institución
+      let tipoUsuario: 'tutor' | 'alumno' = 'alumno'; // Por defecto alumno
+      let codigoInstitucionFinal: string | undefined;
+      
+      if (codigo_institucion && codigo_institucion.trim()) {
+        try {
+          const institutionCodeVO = InstitutionCode.create(codigo_institucion);
+          tipoUsuario = institutionCodeVO.getAssociatedUserType();
+          codigoInstitucionFinal = institutionCodeVO.value;
+        } catch (error) {
+          // Si el código es inválido, se mantiene como alumno
+          console.warn('Código de institución inválido:', codigo_institucion);
+        }
+      }
+      
       // Generar contraseña temporal para mantener compatibilidad
       const tempPassword = await bcrypt.hash(decodedToken.uid, 10);
       
@@ -100,8 +119,9 @@ export class FirebaseAuthUseCase {
         nombre,
         correo,
         tempPassword,
-        tipo_usuario,
-        decodedToken.uid
+        tipoUsuario,
+        decodedToken.uid,
+        codigoInstitucionFinal
       );
       
       const savedUser = await this.userRepository.save(newUser);
@@ -142,8 +162,23 @@ export class FirebaseAuthUseCase {
         token,
         nombre: savedUser.nombre,
         correo: savedUser.correo,
-        firebase_uid: savedUser.firebase_uid || decodedToken.uid
+        firebase_uid: savedUser.firebase_uid || decodedToken.uid,
+        codigoInstitucion: savedUser.codigo_institucion,
+        institucionNombre: this.getInstitutionName(savedUser.codigo_institucion)
       };
+    }
+  }
+
+  private getInstitutionName(codigoInstitucion?: string): string {
+    if (!codigoInstitucion) {
+      return 'Sin institución';
+    }
+    
+    try {
+      const institutionCode = InstitutionCode.create(codigoInstitucion);
+      return institutionCode.getInstitutionName();
+    } catch {
+      return 'Sin institución';
     }
   }
 } 

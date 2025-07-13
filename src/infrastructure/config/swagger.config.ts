@@ -38,7 +38,7 @@ const swaggerDefinition: SwaggerDefinition = {
     schemas: {
       AuthValidateRequest: {
         type: 'object',
-        required: ['correo', 'contraseña', 'tipo_usuario'],
+        required: ['correo', 'contraseña'],
         properties: {
           correo: {
             type: 'string',
@@ -52,17 +52,18 @@ const swaggerDefinition: SwaggerDefinition = {
             description: 'Contraseña del usuario (mínimo 6 caracteres)',
             example: 'password123'
           },
-          tipo_usuario: {
+          codigo_institucion: {
             type: 'string',
-            enum: ['tutor', 'alumno'],
-            description: 'Tipo de usuario en el sistema',
-            example: 'tutor'
+            minLength: 2,
+            maxLength: 20,
+            description: 'Código de institución (opcional). Si es "TUTOR", el usuario será tutor; caso contrario, alumno',
+            example: 'TUTOR'
           }
         }
       },
       FirebaseAuthRequest: {
         type: 'object',
-        required: ['firebase_token', 'nombre', 'correo', 'tipo_usuario'],
+        required: ['firebase_token', 'nombre', 'correo'],
         properties: {
           firebase_token: {
             type: 'string',
@@ -82,11 +83,12 @@ const swaggerDefinition: SwaggerDefinition = {
             description: 'Correo electrónico del usuario (debe coincidir con el del token)',
             example: 'juan@example.com'
           },
-          tipo_usuario: {
+          codigo_institucion: {
             type: 'string',
-            enum: ['tutor', 'alumno'],
-            description: 'Tipo de usuario en el sistema',
-            example: 'alumno'
+            minLength: 2,
+            maxLength: 20,
+            description: 'Código de institución (opcional). Si es "TUTOR", el usuario será tutor; caso contrario, alumno',
+            example: 'TUTOR'
           }
         }
       },
@@ -104,7 +106,7 @@ const swaggerDefinition: SwaggerDefinition = {
               userType: {
                 type: 'string',
                 enum: ['tutor', 'alumno'],
-                description: 'Tipo de usuario',
+                description: 'Tipo de usuario determinado automáticamente por el código de institución',
                 example: 'tutor'
               },
               userId: {
@@ -121,6 +123,16 @@ const swaggerDefinition: SwaggerDefinition = {
                 type: 'string',
                 description: 'Nombre del usuario',
                 example: 'Juan Pérez'
+              },
+              codigoInstitucion: {
+                type: 'string',
+                description: 'Código de institución del usuario',
+                example: 'TUTOR'
+              },
+              institucionNombre: {
+                type: 'string',
+                description: 'Nombre de la institución',
+                example: 'RutaSegura - Institución Principal'
               }
             }
           },
@@ -151,7 +163,7 @@ const swaggerDefinition: SwaggerDefinition = {
               userType: {
                 type: 'string',
                 enum: ['tutor', 'alumno'],
-                description: 'Tipo de usuario',
+                description: 'Tipo de usuario determinado automáticamente por el código de institución',
                 example: 'alumno'
               },
               userId: {
@@ -179,6 +191,16 @@ const swaggerDefinition: SwaggerDefinition = {
                 type: 'string',
                 description: 'UID del usuario en Firebase',
                 example: 'firebase_uid_12345'
+              },
+              codigoInstitucion: {
+                type: 'string',
+                description: 'Código de institución del usuario',
+                example: 'TUTOR'
+              },
+              institucionNombre: {
+                type: 'string',
+                description: 'Nombre de la institución',
+                example: 'RutaSegura - Institución Principal'
               }
             }
           },

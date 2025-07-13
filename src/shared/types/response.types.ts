@@ -29,14 +29,14 @@ export type TipoUsuario = 'tutor' | 'alumno';
 export interface AuthValidateRequest {
   correo: string;
   contraseña: string;
-  tipo_usuario: TipoUsuario;
+  codigo_institucion?: string; // Nuevo campo opcional
 }
 
 export interface FirebaseAuthRequest {
   firebase_token: string;
   nombre: string;
   correo: string;
-  tipo_usuario: TipoUsuario;
+  codigo_institucion?: string; // Nuevo campo opcional
 }
 
 export interface AuthValidateResponse {
@@ -45,6 +45,8 @@ export interface AuthValidateResponse {
   userId?: string;
   token?: string;
   nombre?: string;
+  codigoInstitucion?: string;
+  institucionNombre?: string;
 }
 
 export interface FirebaseAuthResponse {
@@ -55,4 +57,6 @@ export interface FirebaseAuthResponse {
   nombre: string;
   correo: string;
   firebase_uid: string;
+  codigoInstitucion?: string;
+  institucionNombre?: string;
 } 
