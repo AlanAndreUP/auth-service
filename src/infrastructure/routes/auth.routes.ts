@@ -242,7 +242,7 @@ export function createAuthRoutes(): Router {
    *             schema:
    *               $ref: '#/components/schemas/ErrorResponse'
    */
-  router.get('/profile/:userId', authMiddleware, async (req: AuthenticatedRequest, res) => {
+  router.get('/profile/:userId', async (req: AuthenticatedRequest, res) => {
     try {
       const { userId } = req.params;
       
