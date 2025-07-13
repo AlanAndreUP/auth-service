@@ -42,6 +42,15 @@ export class Server {
         data: null,
         message: 'Demasiadas peticiones desde esta IP, intenta de nuevo más tarde',
         status: 'error'
+      },
+      keyGenerator: (req) => {
+        // Usar X-Forwarded-For si está disponible, sino usar la IP directa
+        const forwardedFor = req.headers['x-forwarded-for']?.toString();
+        return forwardedFor ? forwardedFor.split(',')[0].trim() : (req.ip || 'unknown');
+      },
+      skip: (req) => {
+        // Saltar rate limiting para health checks
+        return req.path === '/health';
       }
     });
     this.app.use(limiter);
