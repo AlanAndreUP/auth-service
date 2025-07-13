@@ -3,9 +3,11 @@ import { TipoUsuario } from '@shared/types/response.types';
 
 export interface IUserDocument extends Document {
   _id: string;
+  nombre: string;
   correo: string;
   contraseña: string;
   tipo_usuario: TipoUsuario;
+  firebase_uid?: string;
   created_at: Date;
   updated_at: Date;
   deleted_at?: Date;
@@ -15,6 +17,11 @@ const UserSchema = new Schema<IUserDocument>({
   _id: {
     type: String,
     required: true
+  },
+  nombre: {
+    type: String,
+    required: true,
+    trim: true
   },
   correo: {
     type: String,
@@ -31,6 +38,11 @@ const UserSchema = new Schema<IUserDocument>({
     type: String,
     enum: ['tutor', 'alumno'],
     required: true
+  },
+  firebase_uid: {
+    type: String,
+    unique: true,
+    sparse: true // Permite valores null y undefined sin conflicto con unique
   },
   created_at: {
     type: Date,
@@ -51,6 +63,7 @@ const UserSchema = new Schema<IUserDocument>({
 
 // Índices
 UserSchema.index({ correo: 1 });
+UserSchema.index({ firebase_uid: 1 });
 UserSchema.index({ tipo_usuario: 1 });
 UserSchema.index({ deleted_at: 1 });
 

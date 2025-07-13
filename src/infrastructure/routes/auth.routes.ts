@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import { AuthController } from '@infrastructure/controllers/Auth.controller';
 import { ValidateAuthUseCase } from '@application/use-cases/ValidateAuth.usecase';
+import { FirebaseAuthUseCase } from '@application/use-cases/FirebaseAuth.usecase';
 import { MongoUserRepository } from '@infrastructure/repositories/MongoUser.repository';
+import { FirebaseService } from '@application/services/Firebase.service';
+import { EmailService } from '@application/services/Email.service';
 import { authMiddleware, requireRole, AuthenticatedRequest } from '@infrastructure/middlewares/auth.middleware';
 
 export function createAuthRoutes(): Router {
@@ -9,88 +12,65 @@ export function createAuthRoutes(): Router {
   
   // Dependencias
   const userRepository = new MongoUserRepository();
-  const validateAuthUseCase = new ValidateAuthUseCase(
-    userRepository,
-    process.env.JWT_SECRET || 'default-secret'
-  );
-  const authController = new AuthController(validateAuthUseCase);
+  const firebaseService = FirebaseService.getInstance();
+  const emailService = new EmailService();
+  const jwtSecret = process.env.JWT_SECRET || 'default-secret';
+  
+  // Casos de uso
+  const validateAuthUseCase = new ValidateAuthUseCase(userRepository, emailService, jwtSecret);
+  const firebaseAuthUseCase = new FirebaseAuthUseCase(userRepository, firebaseService, emailService, jwtSecret);
+  
+  // Controlador
+  const authController = new AuthController(validateAuthUseCase, firebaseAuthUseCase);
 
-  // Rutas públicas
   /**
    * @swagger
    * /auth/validate:
    *   post:
    *     tags: [Authentication]
-   *     summary: Valida usuario y maneja registro/login
-   *     description: |
-   *       Endpoint principal para autenticación que:
-   *       - **Registra** un nuevo usuario si no existe
-   *       - **Autentica** un usuario existente si ya está registrado
-   *       
-   *       Devuelve un token JWT válido para ambos casos.
+   *     summary: Valida usuario desde Firebase y maneja registro/login tradicional
+   *     description: Valida un usuario existente o registra uno nuevo usando email y contraseña
    *     requestBody:
    *       required: true
    *       content:
    *         application/json:
    *           schema:
-   *             $ref: '#/components/schemas/AuthValidateRequest'
-   *           examples:
-   *             tutor:
-   *               summary: Registro/Login de Tutor
-   *               value:
-   *                 correo: "tutor@example.com"
-   *                 contraseña: "password123"
-   *                 tipo_usuario: "tutor"
-   *             alumno:
-   *               summary: Registro/Login de Alumno
-   *               value:
-   *                 correo: "alumno@example.com"
-   *                 contraseña: "password123"
-   *                 tipo_usuario: "alumno"
+   *             type: object
+   *             required:
+   *               - correo
+   *               - contraseña
+   *               - tipo_usuario
+   *             properties:
+   *               correo:
+   *                 type: string
+   *                 format: email
+   *                 description: Email del usuario
+   *                 example: "usuario@example.com"
+   *               contraseña:
+   *                 type: string
+   *                 minLength: 6
+   *                 description: Contraseña del usuario
+   *                 example: "password123"
+   *               tipo_usuario:
+   *                 type: string
+   *                 enum: [tutor, alumno]
+   *                 description: Tipo de usuario
+   *                 example: "tutor"
    *     responses:
-   *       201:
-   *         description: Usuario registrado exitosamente (nuevo usuario)
-   *         content:
-   *           application/json:
-   *             schema:
-   *               $ref: '#/components/schemas/AuthValidateResponse'
-   *             example:
-   *               data:
-   *                 isNewUser: true
-   *                 userType: "tutor"
-   *                 userId: "abc123def456"
-   *                 token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-   *               message: "Tutor registrado exitosamente"
-   *               status: "success"
    *       200:
-   *         description: Usuario autenticado exitosamente (usuario existente)
+   *         description: Usuario autenticado exitosamente (login)
    *         content:
    *           application/json:
    *             schema:
-   *               $ref: '#/components/schemas/AuthValidateResponse'
-   *             example:
-   *               data:
-   *                 isNewUser: false
-   *                 userType: "tutor"
-   *                 userId: "abc123def456"
-   *                 token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-   *               message: "Tutor autenticado exitosamente"
-   *               status: "success"
+   *               $ref: '#/components/schemas/AuthResponse'
+   *       201:
+   *         description: Usuario registrado exitosamente (registro)
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/AuthResponse'
    *       400:
    *         description: Datos de entrada inválidos
-   *         content:
-   *           application/json:
-   *             schema:
-   *               $ref: '#/components/schemas/ErrorResponse'
-   *             example:
-   *               data: null
-   *               message: "Datos de entrada inválidos"
-   *               status: "error"
-   *               error:
-   *                 code: "VALIDATION_ERROR"
-   *                 details: ["El correo debe tener un formato válido"]
-   *       401:
-   *         description: Credenciales inválidas
    *         content:
    *           application/json:
    *             schema:
@@ -103,6 +83,73 @@ export function createAuthRoutes(): Router {
    *               $ref: '#/components/schemas/ErrorResponse'
    */
   router.post('/validate', authController.validate);
+
+  /**
+   * @swagger
+   * /auth/firebase:
+   *   post:
+   *     tags: [Authentication]
+   *     summary: Autenticación con Firebase
+   *     description: Autentica o registra un usuario usando Firebase Authentication
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - firebase_token
+   *               - nombre
+   *               - correo
+   *               - tipo_usuario
+   *             properties:
+   *               firebase_token:
+   *                 type: string
+   *                 description: Token de Firebase ID
+   *                 example: "eyJhbGciOiJSUzI1NiIsImtpZCI6IjE2NzAyN..."
+   *               nombre:
+   *                 type: string
+   *                 minLength: 2
+   *                 maxLength: 100
+   *                 description: Nombre completo del usuario
+   *                 example: "Juan Pérez"
+   *               correo:
+   *                 type: string
+   *                 format: email
+   *                 description: Email del usuario
+   *                 example: "juan@example.com"
+   *               tipo_usuario:
+   *                 type: string
+   *                 enum: [tutor, alumno]
+   *                 description: Tipo de usuario
+   *                 example: "alumno"
+   *     responses:
+   *       200:
+   *         description: Usuario autenticado exitosamente con Firebase (login)
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/FirebaseAuthResponse'
+   *       201:
+   *         description: Usuario registrado exitosamente con Firebase (registro)
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/FirebaseAuthResponse'
+   *       400:
+   *         description: Datos de entrada inválidos
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ErrorResponse'
+   *       500:
+   *         description: Error interno del servidor
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ErrorResponse'
+   */
+  router.post('/firebase', authController.firebaseAuth);
 
   // Rutas protegidas (requieren autenticación)
   /**

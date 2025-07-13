@@ -1,31 +1,54 @@
 import { UserRepository } from '@domain/repositories/UserRepository.interface';
 import { User } from '@domain/entities/User.entity';
+import { FirebaseService } from '@application/services/Firebase.service';
 import { EmailService, LoginNotificationData, RegistroNotificationData } from '@application/services/Email.service';
-import { AuthValidateRequest, AuthValidateResponse } from '@shared/types/response.types';
-import bcrypt from 'bcryptjs';
+import { FirebaseAuthRequest, FirebaseAuthResponse } from '@shared/types/response.types';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 
-export class ValidateAuthUseCase {
+export class FirebaseAuthUseCase {
   constructor(
     private readonly userRepository: UserRepository,
+    private readonly firebaseService: FirebaseService,
     private readonly emailService: EmailService,
     private readonly jwtSecret: string
   ) {}
 
-  async execute(request: AuthValidateRequest, ip: string, userAgent: string): Promise<AuthValidateResponse> {
-    const { correo, contraseña, tipo_usuario } = request;
+  async execute(request: FirebaseAuthRequest, ip: string, userAgent: string): Promise<FirebaseAuthResponse> {
+    const { firebase_token, nombre, correo, tipo_usuario } = request;
 
-    // Buscar usuario existente
-    const existingUser = await this.userRepository.findByEmail(correo);
+    // Verificar token de Firebase
+    const decodedToken = await this.firebaseService.verifyIdToken(firebase_token);
+    
+    if (decodedToken.email !== correo) {
+      throw new Error('El correo del token no coincide con el correo proporcionado');
+    }
+
+    // Buscar usuario por Firebase UID
+    let existingUser = await this.userRepository.findByFirebaseUid(decodedToken.uid);
+
+    if (!existingUser) {
+      // Verificar si existe un usuario con el mismo correo (migración)
+      existingUser = await this.userRepository.findByEmail(correo);
+      
+      if (existingUser) {
+        // Actualizar usuario existente con Firebase UID
+        const updatedUser = User.create(
+          existingUser.nombre,
+          existingUser.correo,
+          existingUser.contraseña,
+          existingUser.tipo_usuario,
+          decodedToken.uid,
+          existingUser.id
+        );
+        
+        await this.userRepository.update(updatedUser);
+        existingUser = updatedUser;
+      }
+    }
 
     if (existingUser) {
       // Usuario existente - proceso de login
-      const isValidPassword = await bcrypt.compare(contraseña, existingUser.contraseña);
-      
-      if (!isValidPassword) {
-        throw new Error('Credenciales inválidas');
-      }
-
       if (existingUser.isDeleted()) {
         throw new Error('Usuario desactivado');
       }
@@ -64,18 +87,21 @@ export class ValidateAuthUseCase {
         userType: existingUser.tipo_usuario,
         userId: existingUser.id,
         token,
-        nombre: existingUser.nombre
+        nombre: existingUser.nombre,
+        correo: existingUser.correo,
+        firebase_uid: existingUser.firebase_uid || decodedToken.uid
       };
     } else {
       // Nuevo usuario - proceso de registro
-      // Para el método tradicional, usamos el correo como nombre por defecto
-      const hashedPassword = await bcrypt.hash(contraseña, 10);
+      // Generar contraseña temporal para mantener compatibilidad
+      const tempPassword = await bcrypt.hash(decodedToken.uid, 10);
       
       const newUser = User.create(
-        correo, // Usar correo como nombre por defecto
+        nombre,
         correo,
-        hashedPassword,
-        tipo_usuario
+        tempPassword,
+        tipo_usuario,
+        decodedToken.uid
       );
       
       const savedUser = await this.userRepository.save(newUser);
@@ -114,7 +140,9 @@ export class ValidateAuthUseCase {
         userType: savedUser.tipo_usuario,
         userId: savedUser.id,
         token,
-        nombre: savedUser.nombre
+        nombre: savedUser.nombre,
+        correo: savedUser.correo,
+        firebase_uid: savedUser.firebase_uid || decodedToken.uid
       };
     }
   }

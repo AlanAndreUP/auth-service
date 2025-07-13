@@ -32,9 +32,27 @@ export interface AuthValidateRequest {
   tipo_usuario: TipoUsuario;
 }
 
+export interface FirebaseAuthRequest {
+  firebase_token: string;
+  nombre: string;
+  correo: string;
+  tipo_usuario: TipoUsuario;
+}
+
 export interface AuthValidateResponse {
   isNewUser: boolean;
   userType?: TipoUsuario;
   userId?: string;
   token?: string;
+  nombre?: string;
+}
+
+export interface FirebaseAuthResponse {
+  isNewUser: boolean;
+  userType: TipoUsuario;
+  userId: string;
+  token: string;
+  nombre: string;
+  correo: string;
+  firebase_uid: string;
 } 

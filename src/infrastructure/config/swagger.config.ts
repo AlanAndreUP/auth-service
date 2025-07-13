@@ -32,7 +32,7 @@ const swaggerDefinition: SwaggerDefinition = {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
-        description: 'Token JWT obtenido del endpoint /auth/validate'
+        description: 'Token JWT obtenido del endpoint /auth/validate o /auth/firebase'
       }
     },
     schemas: {
@@ -60,7 +60,37 @@ const swaggerDefinition: SwaggerDefinition = {
           }
         }
       },
-      AuthValidateResponse: {
+      FirebaseAuthRequest: {
+        type: 'object',
+        required: ['firebase_token', 'nombre', 'correo', 'tipo_usuario'],
+        properties: {
+          firebase_token: {
+            type: 'string',
+            description: 'Token de Firebase ID obtenido del cliente',
+            example: 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjE2NzAyN...'
+          },
+          nombre: {
+            type: 'string',
+            minLength: 2,
+            maxLength: 100,
+            description: 'Nombre completo del usuario',
+            example: 'Juan Pérez'
+          },
+          correo: {
+            type: 'string',
+            format: 'email',
+            description: 'Correo electrónico del usuario (debe coincidir con el del token)',
+            example: 'juan@example.com'
+          },
+          tipo_usuario: {
+            type: 'string',
+            enum: ['tutor', 'alumno'],
+            description: 'Tipo de usuario en el sistema',
+            example: 'alumno'
+          }
+        }
+      },
+      AuthResponse: {
         type: 'object',
         properties: {
           data: {
@@ -86,6 +116,11 @@ const swaggerDefinition: SwaggerDefinition = {
                 type: 'string',
                 description: 'Token JWT para autenticación',
                 example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+              },
+              nombre: {
+                type: 'string',
+                description: 'Nombre del usuario',
+                example: 'Juan Pérez'
               }
             }
           },
@@ -93,6 +128,64 @@ const swaggerDefinition: SwaggerDefinition = {
             type: 'string',
             description: 'Mensaje descriptivo del resultado',
             example: 'Tutor registrado exitosamente'
+          },
+          status: {
+            type: 'string',
+            enum: ['success'],
+            description: 'Estado de la respuesta',
+            example: 'success'
+          }
+        }
+      },
+      FirebaseAuthResponse: {
+        type: 'object',
+        properties: {
+          data: {
+            type: 'object',
+            properties: {
+              isNewUser: {
+                type: 'boolean',
+                description: 'Indica si es un usuario nuevo (registro) o existente (login)',
+                example: true
+              },
+              userType: {
+                type: 'string',
+                enum: ['tutor', 'alumno'],
+                description: 'Tipo de usuario',
+                example: 'alumno'
+              },
+              userId: {
+                type: 'string',
+                description: 'ID único del usuario',
+                example: 'abc123def456'
+              },
+              token: {
+                type: 'string',
+                description: 'Token JWT para autenticación',
+                example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+              },
+              nombre: {
+                type: 'string',
+                description: 'Nombre completo del usuario',
+                example: 'Juan Pérez'
+              },
+              correo: {
+                type: 'string',
+                format: 'email',
+                description: 'Correo del usuario',
+                example: 'juan@example.com'
+              },
+              firebase_uid: {
+                type: 'string',
+                description: 'UID del usuario en Firebase',
+                example: 'firebase_uid_12345'
+              }
+            }
+          },
+          message: {
+            type: 'string',
+            description: 'Mensaje descriptivo del resultado',
+            example: 'Alumno registrado exitosamente con Firebase'
           },
           status: {
             type: 'string',
