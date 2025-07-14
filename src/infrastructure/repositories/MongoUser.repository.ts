@@ -3,6 +3,32 @@ import { User } from '@domain/entities/User.entity';
 import { UserModel } from '@infrastructure/database/models/User.model';
 
 export class MongoUserRepository implements UserRepository {
+  async findById(id: string): Promise<User | null> {
+    try {
+      const userDoc = await UserModel.findById(id);
+      
+      if (!userDoc || userDoc.deleted_at) {
+        return null;
+      }
+
+      return new User(
+        userDoc._id.toString(),
+        userDoc.nombre,
+        userDoc.correo,
+        userDoc.contraseña,
+        userDoc.tipo_usuario,
+        userDoc.firebase_uid,
+        userDoc.codigo_institucion,
+        userDoc.created_at,
+        userDoc.updated_at,
+        userDoc.deleted_at
+      );
+    } catch (error) {
+      console.error('Error finding user by ID:', error);
+      throw new Error('Error al buscar usuario por ID');
+    }
+  }
+
   async findByEmail(email: string): Promise<User | null> {
     try {
       const userDoc = await UserModel.findOne({ correo: email, deleted_at: { $exists: false } });
