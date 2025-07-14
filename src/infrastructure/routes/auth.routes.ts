@@ -192,6 +192,160 @@ export function createAuthRoutes(): Router {
    */
   router.post('/firebase', authController.firebaseAuth);
 
+  // Endpoint público para obtener usuarios por rol
+  /**
+   * @swagger
+   * /auth/users/{userType}:
+   *   get:
+   *     tags: [Public]
+   *     summary: Obtiene lista de usuarios por tipo
+   *     description: |
+   *       Devuelve una lista de usuarios filtrados por tipo (tutor o alumno).
+   *       Solo incluye información básica: nombre y correo.
+   *       Este endpoint es público y no requiere autenticación.
+   *     parameters:
+   *       - in: path
+   *         name: userType
+   *         required: true
+   *         schema:
+   *           type: string
+   *           enum: [tutor, alumno]
+   *         description: Tipo de usuario a consultar
+   *         example: "tutor"
+   *     responses:
+   *       200:
+   *         description: Lista de usuarios obtenida exitosamente
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: object
+   *                   properties:
+   *                     users:
+   *                       type: array
+   *                       items:
+   *                         type: object
+   *                         properties:
+   *                           nombre:
+   *                             type: string
+   *                             description: Nombre del usuario
+   *                             example: "Juan Pérez"
+   *                           correo:
+   *                             type: string
+   *                             format: email
+   *                             description: Correo electrónico del usuario
+   *                             example: "juan@example.com"
+   *                     total:
+   *                       type: integer
+   *                       description: Número total de usuarios encontrados
+   *                       example: 5
+   *                     userType:
+   *                       type: string
+   *                       description: Tipo de usuario consultado
+   *                       example: "tutor"
+   *                 message:
+   *                   type: string
+   *                   example: "Usuarios obtenidos exitosamente"
+   *                 status:
+   *                   type: string
+   *                   example: "success"
+   *             examples:
+   *               tutores:
+   *                 summary: Lista de tutores
+   *                 value:
+   *                   data:
+   *                     users:
+   *                       - nombre: "María González"
+   *                         correo: "maria@example.com"
+   *                       - nombre: "Carlos López"
+   *                         correo: "carlos@example.com"
+   *                     total: 2
+   *                     userType: "tutor"
+   *                   message: "Usuarios obtenidos exitosamente"
+   *                   status: "success"
+   *               alumnos:
+   *                 summary: Lista de alumnos
+   *                 value:
+   *                   data:
+   *                     users:
+   *                       - nombre: "Ana García"
+   *                         correo: "ana@example.com"
+   *                       - nombre: "Luis Rodríguez"
+   *                         correo: "luis@example.com"
+   *                       - nombre: "Sofia Martínez"
+   *                         correo: "sofia@example.com"
+   *                     total: 3
+   *                     userType: "alumno"
+   *                   message: "Usuarios obtenidos exitosamente"
+   *                   status: "success"
+   *       400:
+   *         description: Tipo de usuario inválido
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ErrorResponse'
+   *             example:
+   *               data: null
+   *               message: "Tipo de usuario inválido. Debe ser 'tutor' o 'alumno'"
+   *               status: "error"
+   *               error:
+   *                 code: "INVALID_USER_TYPE"
+   *       500:
+   *         description: Error interno del servidor
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ErrorResponse'
+   */
+  router.get('/users/:userType', async (req, res) => {
+    try {
+      const { userType } = req.params;
+      
+      // Validar que el tipo de usuario sea válido
+      if (!['tutor', 'alumno'].includes(userType)) {
+        return res.status(400).json({
+          data: null,
+          message: "Tipo de usuario inválido. Debe ser 'tutor' o 'alumno'",
+          status: 'error',
+          error: {
+            code: 'INVALID_USER_TYPE'
+          }
+        });
+      }
+
+      // Buscar usuarios por tipo en el repositorio
+      const users = await userRepository.findByUserType(userType as 'tutor' | 'alumno');
+      
+      // Mapear solo nombre y correo
+      const usersList = users.map((user: any) => ({
+        nombre: user.nombre,
+        correo: user.correo
+      }));
+
+      res.json({
+        data: {
+          users: usersList,
+          total: usersList.length,
+          userType: userType
+        },
+        message: 'Usuarios obtenidos exitosamente',
+        status: 'success'
+      });
+    } catch (error) {
+      console.error('Error al obtener usuarios por tipo:', error);
+      res.status(500).json({
+        data: null,
+        message: 'Error interno del servidor',
+        status: 'error',
+        error: {
+          code: 'INTERNAL_SERVER_ERROR'
+        }
+      });
+    }
+  });
+
   // Rutas protegidas (requieren autenticación)
   /**
    * @swagger
