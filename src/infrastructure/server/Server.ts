@@ -96,7 +96,7 @@ export class Server {
      *               message: "Servicio de autenticación funcionando correctamente"
      *               status: "success"
      */
-    this.app.get('/health', (req, res) => {
+    this.app.get('/auth/health', (req, res) => {
       res.json({
         data: { service: 'auth-service', timestamp: new Date().toISOString() },
         message: 'Servicio de autenticación funcionando correctamente',
