@@ -81,6 +81,31 @@ export class MongoUserRepository implements UserRepository {
     }
   }
 
+  async findByUserType(userType: 'tutor' | 'alumno'): Promise<User[]> {
+    try {
+      const userDocs = await UserModel.find({ 
+        tipo_usuario: userType, 
+        deleted_at: { $exists: false } 
+      });
+      
+      return userDocs.map(userDoc => new User(
+        userDoc._id.toString(),
+        userDoc.nombre,
+        userDoc.correo,
+        userDoc.contraseña,
+        userDoc.tipo_usuario,
+        userDoc.firebase_uid,
+        userDoc.codigo_institucion,
+        userDoc.created_at,
+        userDoc.updated_at,
+        userDoc.deleted_at
+      ));
+    } catch (error) {
+      console.error('Error finding users by user type:', error);
+      throw new Error('Error al buscar usuarios por tipo');
+    }
+  }
+
   async findByInstitutionCode(institutionCode: string): Promise<User[]> {
     try {
       const userDocs = await UserModel.find({ 

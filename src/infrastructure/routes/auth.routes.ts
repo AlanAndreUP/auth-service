@@ -228,6 +228,10 @@ export function createAuthRoutes(): Router {
    *                       items:
    *                         type: object
    *                         properties:
+   *                           id:
+   *                             type: string
+   *                             description: ID único del usuario
+   *                             example: "abc123def456"
    *                           nombre:
    *                             type: string
    *                             description: Nombre del usuario
@@ -257,9 +261,11 @@ export function createAuthRoutes(): Router {
    *                 value:
    *                   data:
    *                     users:
-   *                       - nombre: "María González"
+   *                       - id: "tutor001"
+   *                         nombre: "María González"
    *                         correo: "maria@example.com"
-   *                       - nombre: "Carlos López"
+   *                       - id: "tutor002"
+   *                         nombre: "Carlos López"
    *                         correo: "carlos@example.com"
    *                     total: 2
    *                     userType: "tutor"
@@ -270,11 +276,14 @@ export function createAuthRoutes(): Router {
    *                 value:
    *                   data:
    *                     users:
-   *                       - nombre: "Ana García"
+   *                       - id: "alumno001"
+   *                         nombre: "Ana García"
    *                         correo: "ana@example.com"
-   *                       - nombre: "Luis Rodríguez"
+   *                       - id: "alumno002"
+   *                         nombre: "Luis Rodríguez"
    *                         correo: "luis@example.com"
-   *                       - nombre: "Sofia Martínez"
+   *                       - id: "alumno003"
+   *                         nombre: "Sofia Martínez"
    *                         correo: "sofia@example.com"
    *                     total: 3
    *                     userType: "alumno"
@@ -318,8 +327,9 @@ export function createAuthRoutes(): Router {
       // Buscar usuarios por tipo en el repositorio
       const users = await userRepository.findByUserType(userType as 'tutor' | 'alumno');
       
-      // Mapear solo nombre y correo
+      // Mapear ID, nombre y correo
       const usersList = users.map((user: any) => ({
+        id: user.id,
         nombre: user.nombre,
         correo: user.correo
       }));
