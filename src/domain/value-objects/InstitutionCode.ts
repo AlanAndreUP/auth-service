@@ -1,6 +1,6 @@
 export class InstitutionCode {
   private readonly _value: string;
-  private static readonly VALID_TUTOR_CODES = ['TUTOR']; // Por ahora solo hardcoded
+  private static readonly VALID_TUTOR_CODES = ['TUTOR']; // Fallback hardcoded
   
   constructor(value: string) {
     if (!this.isValid(value)) {
@@ -113,6 +113,42 @@ export class InstitutionCode {
       return institutionCode.getAssociatedUserType();
     } catch {
       return 'alumno'; // Por defecto alumno si el código es inválido
+    }
+  }
+
+  // Métodos estáticos para validar códigos de tutor usando el repositorio
+  static async isValidTutorCodeFromDB(code: string, tutorCodeRepository: any): Promise<boolean> {
+    try {
+      const tutorCode = await tutorCodeRepository.findByCode(code);
+      return tutorCode !== null && !tutorCode.isUsed;
+    } catch (error) {
+      console.error('Error validando código de tutor desde DB:', error);
+      // Fallback a validación local
+      return InstitutionCode.isValidTutorCode(code);
+    }
+  }
+
+  static async getUserTypeFromCodeWithDB(code: string, tutorCodeRepository: any): Promise<'tutor' | 'alumno'> {
+    try {
+      const isValidTutorCode = await InstitutionCode.isValidTutorCodeFromDB(code, tutorCodeRepository);
+      return isValidTutorCode ? 'tutor' : 'alumno';
+    } catch (error) {
+      console.error('Error obteniendo tipo de usuario desde DB:', error);
+      // Fallback a validación local
+      return InstitutionCode.getUserTypeFromCode(code);
+    }
+  }
+
+  static async markTutorCodeAsUsed(code: string, userId: string, tutorCodeRepository: any): Promise<void> {
+    try {
+      const tutorCode = await tutorCodeRepository.findByCode(code);
+      if (tutorCode && !tutorCode.isUsed) {
+        const updatedCode = tutorCode.markAsUsed(userId);
+        await tutorCodeRepository.update(updatedCode);
+      }
+    } catch (error) {
+      console.error('Error marcando código de tutor como usado:', error);
+      // No lanzar error para no afectar el flujo de registro
     }
   }
 } 

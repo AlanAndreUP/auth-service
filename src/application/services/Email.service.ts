@@ -83,6 +83,22 @@ export class EmailService {
     }
   }
 
+  async sendTutorCodeEmail(email: string, code: string): Promise<void> {
+    try {
+      await this.resend.emails.send({
+        from: this.fromEmail,
+        to: email,
+        subject: 'Tu código de tutor para PsicoDemy',
+        html: this.generateTutorCodeTemplate(email, code)
+      });
+
+      console.log(`✅ Código de tutor enviado exitosamente a ${email}`);
+    } catch (error) {
+      console.error(`❌ Error enviando código de tutor a ${email}:`, error);
+      throw new Error('Error al enviar código de tutor por email');
+    }
+  }
+
   private generateRegistroUserTemplate(data: RegistroNotificationData): string {
     return `
       <!DOCTYPE html>
@@ -212,6 +228,70 @@ export class EmailService {
           
           <div class="footer">
             <p>PsicoDemy Team</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  private generateTutorCodeTemplate(email: string, code: string): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Código de Tutor - PsicoDemy</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #7c3aed; color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; background: #f8f9fa; }
+          .code-box { background: white; padding: 20px; margin: 20px 0; border: 2px solid #7c3aed; border-radius: 8px; text-align: center; }
+          .code { font-size: 24px; font-weight: bold; color: #7c3aed; letter-spacing: 2px; }
+          .footer { text-align: center; padding: 20px; color: #666; }
+          .warning { background: #fef3c7; border: 1px solid #f59e0b; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Tu Código de Tutor</h1>
+          </div>
+          
+          <div class="content">
+            <h2>Hola,</h2>
+            <p>Has sido invitado a registrarte como tutor en PsicoDemy. Aquí tienes tu código único:</p>
+            
+            <div class="code-box">
+              <h3>Tu código de tutor es:</h3>
+              <div class="code">${code}</div>
+            </div>
+            
+            <div class="warning">
+              <p><strong>⚠️ Importante:</strong></p>
+              <ul>
+                <li>Este código es único y personal</li>
+                <li>Úsalo solo una vez durante tu registro</li>
+                <li>No lo compartas con nadie</li>
+                <li>Si no solicitaste este código, ignora este email</li>
+              </ul>
+            </div>
+            
+            <p>Para registrarte como tutor:</p>
+            <ol>
+              <li>Ve a la página de registro de PsicoDemy</li>
+              <li>Ingresa tu información personal</li>
+              <li>En el campo "Código de institución", ingresa: <strong>${code}</strong></li>
+              <li>Completa el registro</li>
+            </ol>
+            
+            <p>¡Gracias por unirte a nuestra comunidad de tutores!</p>
+          </div>
+          
+          <div class="footer">
+            <p>PsicoDemy Team</p>
+            <p>Si tienes alguna pregunta, contacta a nuestro equipo de soporte.</p>
           </div>
         </div>
       </body>

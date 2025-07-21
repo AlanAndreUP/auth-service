@@ -3,6 +3,8 @@ import { AuthController } from '@infrastructure/controllers/Auth.controller';
 import { ValidateAuthUseCase } from '@application/use-cases/ValidateAuth.usecase';
 import { FirebaseAuthUseCase } from '@application/use-cases/FirebaseAuth.usecase';
 import { MongoUserRepository } from '@infrastructure/repositories/MongoUser.repository';
+import { MongoTutorCodeRepository } from '@infrastructure/repositories/MongoTutorCode.repository';
+import { TutorCode } from '@domain/entities/TutorCode.entity';
 import { FirebaseService } from '@application/services/Firebase.service';
 import { EmailService } from '@application/services/Email.service';
 import { authMiddleware, requireRole, AuthenticatedRequest } from '@infrastructure/middlewares/auth.middleware';
@@ -12,6 +14,7 @@ export function createAuthRoutes(): Router {
   
   // Dependencias
   const userRepository = new MongoUserRepository();
+  const tutorCodeRepository = new MongoTutorCodeRepository();
   const firebaseService = FirebaseService.getInstance();
   const emailService = new EmailService();
   const jwtSecret = process.env.JWT_SECRET || 'default-secret';
@@ -345,6 +348,580 @@ export function createAuthRoutes(): Router {
       });
     } catch (error) {
       console.error('Error al obtener usuarios por tipo:', error);
+      res.status(500).json({
+        data: null,
+        message: 'Error interno del servidor',
+        status: 'error',
+        error: {
+          code: 'INTERNAL_SERVER_ERROR'
+        }
+      });
+    }
+  });
+
+  // Endpoint público para obtener todos los usuarios
+  /**
+   * @swagger
+   * /auth/users:
+   *   get:
+   *     tags: [Public]
+   *     summary: Obtiene todos los usuarios
+   *     description: |
+   *       Devuelve una lista de todos los usuarios registrados.
+   *       Solo incluye información básica: ID, nombre y correo.
+   *       Este endpoint es público y no requiere autenticación.
+   *     responses:
+   *       200:
+   *         description: Lista de usuarios obtenida exitosamente
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: object
+   *                   properties:
+   *                     users:
+   *                       type: array
+   *                       items:
+   *                         type: object
+   *                         properties:
+   *                           id:
+   *                             type: string
+   *                             description: ID único del usuario
+   *                             example: "abc123def456"
+   *                           nombre:
+   *                             type: string
+   *                             description: Nombre del usuario
+   *                             example: "Juan Pérez"
+   *                           correo:
+   *                             type: string
+   *                             format: email
+   *                             description: Correo electrónico del usuario
+   *                             example: "juan@example.com"
+   *                           tipo_usuario:
+   *                             type: string
+   *                             enum: [tutor, alumno]
+   *                             description: Tipo de usuario
+   *                             example: "tutor"
+   *                     total:
+   *                       type: integer
+   *                       description: Número total de usuarios
+   *                       example: 10
+   *                 message:
+   *                   type: string
+   *                   example: "Usuarios obtenidos exitosamente"
+   *                 status:
+   *                   type: string
+   *                   example: "success"
+   *       500:
+   *         description: Error interno del servidor
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ErrorResponse'
+   */
+  router.get('/users', async (req, res) => {
+    try {
+      const users = await userRepository.findAll();
+      
+      const usersList = users.map((user: any) => ({
+        id: user.id,
+        nombre: user.nombre,
+        correo: user.correo,
+        tipo_usuario: user.tipo_usuario
+      }));
+
+      res.json({
+        data: {
+          users: usersList,
+          total: usersList.length
+        },
+        message: 'Usuarios obtenidos exitosamente',
+        status: 'success'
+      });
+    } catch (error) {
+      console.error('Error al obtener todos los usuarios:', error);
+      res.status(500).json({
+        data: null,
+        message: 'Error interno del servidor',
+        status: 'error',
+        error: {
+          code: 'INTERNAL_SERVER_ERROR'
+        }
+      });
+    }
+  });
+
+  // Endpoint público para obtener todos los tutores
+  /**
+   * @swagger
+   * /auth/tutors:
+   *   get:
+   *     tags: [Public]
+   *     summary: Obtiene todos los tutores
+   *     description: |
+   *       Devuelve una lista de todos los usuarios con rol de tutor.
+   *       Solo incluye información básica: ID, nombre y correo.
+   *       Este endpoint es público y no requiere autenticación.
+   *     responses:
+   *       200:
+   *         description: Lista de tutores obtenida exitosamente
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: object
+   *                   properties:
+   *                     tutors:
+   *                       type: array
+   *                       items:
+   *                         type: object
+   *                         properties:
+   *                           id:
+   *                             type: string
+   *                             description: ID único del tutor
+   *                             example: "tutor001"
+   *                           nombre:
+   *                             type: string
+   *                             description: Nombre del tutor
+   *                             example: "María González"
+   *                           correo:
+   *                             type: string
+   *                             format: email
+   *                             description: Correo electrónico del tutor
+   *                             example: "maria@example.com"
+   *                     total:
+   *                       type: integer
+   *                       description: Número total de tutores
+   *                       example: 5
+   *                 message:
+   *                   type: string
+   *                   example: "Tutores obtenidos exitosamente"
+   *                 status:
+   *                   type: string
+   *                   example: "success"
+   *       500:
+   *         description: Error interno del servidor
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ErrorResponse'
+   */
+  router.get('/tutors', async (req, res) => {
+    try {
+      const tutors = await userRepository.findAllTutors();
+      
+      const tutorsList = tutors.map((tutor: any) => ({
+        id: tutor.id,
+        nombre: tutor.nombre,
+        correo: tutor.correo
+      }));
+
+      res.json({
+        data: {
+          tutors: tutorsList,
+          total: tutorsList.length
+        },
+        message: 'Tutores obtenidos exitosamente',
+        status: 'success'
+      });
+    } catch (error) {
+      console.error('Error al obtener todos los tutores:', error);
+      res.status(500).json({
+        data: null,
+        message: 'Error interno del servidor',
+        status: 'error',
+        error: {
+          code: 'INTERNAL_SERVER_ERROR'
+        }
+      });
+    }
+  });
+
+  // Endpoint público para obtener usuario por ID
+  /**
+   * @swagger
+   * /auth/user/{userId}:
+   *   get:
+   *     tags: [Public]
+   *     summary: Obtiene un usuario por ID
+   *     description: |
+   *       Devuelve la información de un usuario específico por su ID.
+   *       Solo incluye información básica: ID, nombre y correo.
+   *       Este endpoint es público y no requiere autenticación.
+   *     parameters:
+   *       - in: path
+   *         name: userId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: ID del usuario a consultar
+   *         example: "abc123def456"
+   *     responses:
+   *       200:
+   *         description: Usuario obtenido exitosamente
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: object
+   *                   properties:
+   *                     user:
+   *                       type: object
+   *                       properties:
+   *                         id:
+   *                           type: string
+   *                           description: ID único del usuario
+   *                           example: "abc123def456"
+   *                         nombre:
+   *                           type: string
+   *                           description: Nombre del usuario
+   *                           example: "Juan Pérez"
+   *                         correo:
+   *                           type: string
+   *                           format: email
+   *                           description: Correo electrónico del usuario
+   *                           example: "juan@example.com"
+   *                         tipo_usuario:
+   *                           type: string
+   *                           enum: [tutor, alumno]
+   *                           description: Tipo de usuario
+   *                           example: "tutor"
+   *                 message:
+   *                   type: string
+   *                   example: "Usuario obtenido exitosamente"
+   *                 status:
+   *                   type: string
+   *                   example: "success"
+   *       404:
+   *         description: Usuario no encontrado
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ErrorResponse'
+   *       500:
+   *         description: Error interno del servidor
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ErrorResponse'
+   */
+  router.get('/user/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params;
+      
+      if (!userId) {
+        return res.status(400).json({
+          data: null,
+          message: 'ID de usuario requerido',
+          status: 'error',
+          error: {
+            code: 'USER_ID_REQUIRED'
+          }
+        });
+      }
+
+      const user = await userRepository.findById(userId);
+      
+      if (!user) {
+        return res.status(404).json({
+          data: null,
+          message: 'Usuario no encontrado',
+          status: 'error',
+          error: {
+            code: 'USER_NOT_FOUND'
+          }
+        });
+      }
+
+      res.json({
+        data: {
+          user: {
+            id: user.id,
+            nombre: user.nombre,
+            correo: user.correo,
+            tipo_usuario: user.tipo_usuario
+          }
+        },
+        message: 'Usuario obtenido exitosamente',
+        status: 'success'
+      });
+    } catch (error) {
+      console.error('Error al obtener usuario por ID:', error);
+      res.status(500).json({
+        data: null,
+        message: 'Error interno del servidor',
+        status: 'error',
+        error: {
+          code: 'INTERNAL_SERVER_ERROR'
+        }
+      });
+    }
+  });
+
+  // Endpoint público para crear códigos de tutores
+  /**
+   * @swagger
+   * /auth/tutor-codes:
+   *   post:
+   *     tags: [Public]
+   *     summary: Crea códigos de tutores
+   *     description: |
+   *       Crea códigos únicos para tutores y los envía por email.
+   *       Este endpoint es público y no requiere autenticación.
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - emails
+   *             properties:
+   *               emails:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *                   format: email
+   *                 description: Lista de emails para generar códigos
+   *                 example: ["tutor1@example.com", "tutor2@example.com"]
+   *     responses:
+   *       201:
+   *         description: Códigos de tutores creados exitosamente
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: object
+   *                   properties:
+   *                     codes:
+   *                       type: array
+   *                       items:
+   *                         type: object
+   *                         properties:
+   *                           id:
+   *                             type: string
+   *                             description: ID del código
+   *                             example: "code001"
+   *                           code:
+   *                             type: string
+   *                             description: Código generado
+   *                             example: "ABC12345"
+   *                           email:
+   *                             type: string
+   *                             format: email
+   *                             description: Email del tutor
+   *                             example: "tutor1@example.com"
+   *                     total:
+   *                       type: integer
+   *                       description: Número de códigos creados
+   *                       example: 2
+   *                 message:
+   *                   type: string
+   *                   example: "Códigos de tutores creados y enviados exitosamente"
+   *                 status:
+   *                   type: string
+   *                   example: "success"
+   *       400:
+   *         description: Datos de entrada inválidos
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ErrorResponse'
+   *       500:
+   *         description: Error interno del servidor
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ErrorResponse'
+   */
+  router.post('/tutor-codes', async (req, res) => {
+    try {
+      const { emails } = req.body;
+      
+      if (!emails || !Array.isArray(emails) || emails.length === 0) {
+        return res.status(400).json({
+          data: null,
+          message: 'Lista de emails requerida',
+          status: 'error',
+          error: {
+            code: 'EMAILS_REQUIRED'
+          }
+        });
+      }
+
+      const createdCodes = [];
+
+      for (const email of emails) {
+        try {
+          // Generar código único
+          const code = await tutorCodeRepository.generateUniqueCode();
+          
+          // Crear entidad del código
+          const tutorCode = TutorCode.create(code, email);
+          
+          // Guardar en base de datos
+          const savedCode = await tutorCodeRepository.save(tutorCode);
+          
+          // Enviar email con el código
+          await emailService.sendTutorCodeEmail(email, code);
+          
+          createdCodes.push({
+            id: savedCode.id,
+            code: savedCode.code,
+            email: savedCode.email
+          });
+        } catch (error) {
+          console.error(`Error procesando email ${email}:`, error);
+          // Continuar con el siguiente email
+        }
+      }
+
+      res.status(201).json({
+        data: {
+          codes: createdCodes,
+          total: createdCodes.length
+        },
+        message: 'Códigos de tutores creados y enviados exitosamente',
+        status: 'success'
+      });
+    } catch (error) {
+      console.error('Error al crear códigos de tutores:', error);
+      res.status(500).json({
+        data: null,
+        message: 'Error interno del servidor',
+        status: 'error',
+        error: {
+          code: 'INTERNAL_SERVER_ERROR'
+        }
+      });
+    }
+  });
+
+  // Endpoint público para enviar códigos de tutores por email
+  /**
+   * @swagger
+   * /auth/tutor-codes/send:
+   *   post:
+   *     tags: [Public]
+   *     summary: Envía códigos de tutores por email
+   *     description: |
+   *       Envía códigos de tutores existentes a emails específicos.
+   *       Este endpoint es público y no requiere autenticación.
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - emails
+   *             properties:
+   *               emails:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *                   format: email
+   *                 description: Lista de emails para enviar códigos
+   *                 example: ["tutor1@example.com", "tutor2@example.com"]
+   *     responses:
+   *       200:
+   *         description: Códigos enviados exitosamente
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: object
+   *                   properties:
+   *                     sent:
+   *                       type: integer
+   *                       description: Número de códigos enviados
+   *                       example: 2
+   *                     failed:
+   *                       type: integer
+   *                       description: Número de emails que fallaron
+   *                       example: 0
+   *                 message:
+   *                   type: string
+   *                   example: "Códigos de tutores enviados exitosamente"
+   *                 status:
+   *                   type: string
+   *                   example: "success"
+   *       400:
+   *         description: Datos de entrada inválidos
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ErrorResponse'
+   *       500:
+   *         description: Error interno del servidor
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/ErrorResponse'
+   */
+  router.post('/tutor-codes/send', async (req, res) => {
+    try {
+      const { emails } = req.body;
+      
+      if (!emails || !Array.isArray(emails) || emails.length === 0) {
+        return res.status(400).json({
+          data: null,
+          message: 'Lista de emails requerida',
+          status: 'error',
+          error: {
+            code: 'EMAILS_REQUIRED'
+          }
+        });
+      }
+
+      let sentCount = 0;
+      let failedCount = 0;
+
+      for (const email of emails) {
+        try {
+          // Buscar códigos no utilizados para este email
+          const codes = await tutorCodeRepository.findByEmail(email);
+          const unusedCodes = codes.filter(code => !code.isUsed);
+          
+          if (unusedCodes.length > 0) {
+            // Enviar el primer código no utilizado
+            const codeToSend = unusedCodes[0];
+            await emailService.sendTutorCodeEmail(email, codeToSend.code);
+            sentCount++;
+          } else {
+            // No hay códigos disponibles, crear uno nuevo
+            const code = await tutorCodeRepository.generateUniqueCode();
+            const tutorCode = TutorCode.create(code, email);
+            await tutorCodeRepository.save(tutorCode);
+            await emailService.sendTutorCodeEmail(email, code);
+            sentCount++;
+          }
+        } catch (error) {
+          console.error(`Error enviando código a ${email}:`, error);
+          failedCount++;
+        }
+      }
+
+      res.json({
+        data: {
+          sent: sentCount,
+          failed: failedCount
+        },
+        message: 'Códigos de tutores enviados exitosamente',
+        status: 'success'
+      });
+    } catch (error) {
+      console.error('Error al enviar códigos de tutores:', error);
       res.status(500).json({
         data: null,
         message: 'Error interno del servidor',

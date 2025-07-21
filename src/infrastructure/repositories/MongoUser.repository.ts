@@ -106,6 +106,55 @@ export class MongoUserRepository implements UserRepository {
     }
   }
 
+  async findAll(): Promise<User[]> {
+    try {
+      const userDocs = await UserModel.find({ 
+        deleted_at: { $exists: false } 
+      });
+      
+      return userDocs.map(userDoc => new User(
+        userDoc._id.toString(),
+        userDoc.nombre,
+        userDoc.correo,
+        userDoc.contraseña,
+        userDoc.tipo_usuario,
+        userDoc.firebase_uid,
+        userDoc.codigo_institucion,
+        userDoc.created_at,
+        userDoc.updated_at,
+        userDoc.deleted_at
+      ));
+    } catch (error) {
+      console.error('Error finding all users:', error);
+      throw new Error('Error al buscar todos los usuarios');
+    }
+  }
+
+  async findAllTutors(): Promise<User[]> {
+    try {
+      const userDocs = await UserModel.find({ 
+        tipo_usuario: 'tutor',
+        deleted_at: { $exists: false } 
+      });
+      
+      return userDocs.map(userDoc => new User(
+        userDoc._id.toString(),
+        userDoc.nombre,
+        userDoc.correo,
+        userDoc.contraseña,
+        userDoc.tipo_usuario,
+        userDoc.firebase_uid,
+        userDoc.codigo_institucion,
+        userDoc.created_at,
+        userDoc.updated_at,
+        userDoc.deleted_at
+      ));
+    } catch (error) {
+      console.error('Error finding all tutors:', error);
+      throw new Error('Error al buscar todos los tutores');
+    }
+  }
+
   async findByInstitutionCode(institutionCode: string): Promise<User[]> {
     try {
       const userDocs = await UserModel.find({ 

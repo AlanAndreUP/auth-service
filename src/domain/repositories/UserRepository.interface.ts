@@ -6,6 +6,8 @@ export interface UserRepository {
   findByFirebaseUid(firebaseUid: string): Promise<User | null>;
   findByUserType(userType: 'tutor' | 'alumno'): Promise<User[]>;
   findByInstitutionCode(institutionCode: string): Promise<User[]>;
+  findAll(): Promise<User[]>;
+  findAllTutors(): Promise<User[]>;
   save(user: User): Promise<User>;
   update(user: User): Promise<User>;
   delete(id: string): Promise<void>;
