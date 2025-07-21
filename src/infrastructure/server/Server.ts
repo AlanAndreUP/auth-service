@@ -28,11 +28,8 @@ export class Server {
     // Seguridad
     this.app.use(helmet());
     
-    // CORS
-    this.app.use(cors({
-      origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
-      credentials: true
-    }));
+    // CORS LIBRE
+    this.app.use(cors());
 
     // Rate limiting
     const limiter = rateLimit({
