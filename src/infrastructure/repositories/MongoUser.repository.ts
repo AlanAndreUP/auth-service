@@ -19,8 +19,12 @@ export class MongoUserRepository implements UserRepository {
         userDoc.tipo_usuario,
         userDoc.firebase_uid,
         userDoc.codigo_institucion,
+        userDoc.is_active,
         userDoc.created_at,
         userDoc.updated_at,
+        userDoc.last_login,
+        userDoc.ip_address,
+        userDoc.user_agent,
         userDoc.deleted_at
       );
     } catch (error) {
@@ -45,8 +49,12 @@ export class MongoUserRepository implements UserRepository {
         userDoc.tipo_usuario,
         userDoc.firebase_uid,
         userDoc.codigo_institucion,
+        userDoc.is_active,
         userDoc.created_at,
         userDoc.updated_at,
+        userDoc.last_login,
+        userDoc.ip_address,
+        userDoc.user_agent,
         userDoc.deleted_at
       );
     } catch (error) {
@@ -71,8 +79,12 @@ export class MongoUserRepository implements UserRepository {
         userDoc.tipo_usuario,
         userDoc.firebase_uid,
         userDoc.codigo_institucion,
+        userDoc.is_active,
         userDoc.created_at,
         userDoc.updated_at,
+        userDoc.last_login,
+        userDoc.ip_address,
+        userDoc.user_agent,
         userDoc.deleted_at
       );
     } catch (error) {
@@ -96,8 +108,12 @@ export class MongoUserRepository implements UserRepository {
         userDoc.tipo_usuario,
         userDoc.firebase_uid,
         userDoc.codigo_institucion,
+        userDoc.is_active,
         userDoc.created_at,
         userDoc.updated_at,
+        userDoc.last_login,
+        userDoc.ip_address,
+        userDoc.user_agent,
         userDoc.deleted_at
       ));
     } catch (error) {
@@ -120,8 +136,12 @@ export class MongoUserRepository implements UserRepository {
         userDoc.tipo_usuario,
         userDoc.firebase_uid,
         userDoc.codigo_institucion,
+        userDoc.is_active,
         userDoc.created_at,
         userDoc.updated_at,
+        userDoc.last_login,
+        userDoc.ip_address,
+        userDoc.user_agent,
         userDoc.deleted_at
       ));
     } catch (error) {
@@ -145,8 +165,12 @@ export class MongoUserRepository implements UserRepository {
         userDoc.tipo_usuario,
         userDoc.firebase_uid,
         userDoc.codigo_institucion,
+        userDoc.is_active,
         userDoc.created_at,
         userDoc.updated_at,
+        userDoc.last_login,
+        userDoc.ip_address,
+        userDoc.user_agent,
         userDoc.deleted_at
       ));
     } catch (error) {
@@ -170,8 +194,12 @@ export class MongoUserRepository implements UserRepository {
         userDoc.tipo_usuario,
         userDoc.firebase_uid,
         userDoc.codigo_institucion,
+        userDoc.is_active,
         userDoc.created_at,
         userDoc.updated_at,
+        userDoc.last_login,
+        userDoc.ip_address,
+        userDoc.user_agent,
         userDoc.deleted_at
       ));
     } catch (error) {
@@ -190,8 +218,12 @@ export class MongoUserRepository implements UserRepository {
         tipo_usuario: user.tipo_usuario,
         firebase_uid: user.firebase_uid,
         codigo_institucion: user.codigo_institucion,
+        is_active: user.is_active,
         created_at: user.created_at,
         updated_at: user.updated_at,
+        last_login: user.last_login,
+        ip_address: user.ip_address,
+        user_agent: user.user_agent,
         deleted_at: user.deleted_at
       });
 
@@ -205,8 +237,12 @@ export class MongoUserRepository implements UserRepository {
         userDoc.tipo_usuario,
         userDoc.firebase_uid,
         userDoc.codigo_institucion,
+        userDoc.is_active,
         userDoc.created_at,
         userDoc.updated_at,
+        userDoc.last_login,
+        userDoc.ip_address,
+        userDoc.user_agent,
         userDoc.deleted_at
       );
     } catch (error) {
@@ -226,7 +262,11 @@ export class MongoUserRepository implements UserRepository {
           tipo_usuario: user.tipo_usuario,
           firebase_uid: user.firebase_uid,
           codigo_institucion: user.codigo_institucion,
+          is_active: user.is_active,
           updated_at: new Date(),
+          last_login: user.last_login,
+          ip_address: user.ip_address,
+          user_agent: user.user_agent,
           deleted_at: user.deleted_at
         },
         { new: true }
@@ -244,8 +284,12 @@ export class MongoUserRepository implements UserRepository {
         userDoc.tipo_usuario,
         userDoc.firebase_uid,
         userDoc.codigo_institucion,
+        userDoc.is_active,
         userDoc.created_at,
         userDoc.updated_at,
+        userDoc.last_login,
+        userDoc.ip_address,
+        userDoc.user_agent,
         userDoc.deleted_at
       );
     } catch (error) {

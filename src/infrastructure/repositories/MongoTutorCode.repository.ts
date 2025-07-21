@@ -67,7 +67,6 @@ export class MongoTutorCodeRepository implements TutorCodeRepository {
   async save(tutorCode: TutorCode): Promise<TutorCode> {
     try {
       const tutorCodeDoc = new TutorCodeModel({
-        _id: tutorCode.id,
         code: tutorCode.code,
         email: tutorCode.email,
         isUsed: tutorCode.isUsed,

@@ -9,8 +9,12 @@ export interface IUserDocument extends Document {
   tipo_usuario: TipoUsuario;
   firebase_uid?: string;
   codigo_institucion?: string;
+  is_active: boolean;
   created_at: Date;
   updated_at: Date;
+  last_login?: Date;
+  ip_address?: string;
+  user_agent?: string;
   deleted_at?: Date;
 }
 
@@ -51,6 +55,10 @@ const UserSchema = new Schema<IUserDocument>({
     uppercase: true,
     sparse: true // Permite valores null y undefined sin conflicto con unique si hay índice
   },
+  is_active: {
+    type: Boolean,
+    default: true
+  },
   created_at: {
     type: Date,
     default: Date.now
@@ -58,6 +66,18 @@ const UserSchema = new Schema<IUserDocument>({
   updated_at: {
     type: Date,
     default: Date.now
+  },
+  last_login: {
+    type: Date,
+    required: false
+  },
+  ip_address: {
+    type: String,
+    required: false
+  },
+  user_agent: {
+    type: String,
+    required: false
   },
   deleted_at: {
     type: Date,

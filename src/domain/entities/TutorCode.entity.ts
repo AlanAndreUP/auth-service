@@ -1,6 +1,6 @@
 export class TutorCode {
   constructor(
-    public readonly id: string,
+    public readonly id: string | undefined,
     public readonly code: string,
     public readonly email: string,
     public readonly isUsed: boolean = false,
@@ -13,14 +13,10 @@ export class TutorCode {
 
   static create(code: string, email: string, id?: string): TutorCode {
     return new TutorCode(
-      id || this.generateId(),
+      id, // Solo si viene de la base de datos
       code,
       email
     );
-  }
-
-  static generateId(): string {
-    return Math.random().toString(36).substring(2) + Date.now().toString(36);
   }
 
   static generateCode(): string {

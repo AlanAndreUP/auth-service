@@ -9,8 +9,12 @@ export class User {
     public readonly tipo_usuario: TipoUsuario,
     public readonly firebase_uid?: string,
     public readonly codigo_institucion?: string,
+    public readonly is_active: boolean = true,
     public readonly created_at: Date = new Date(),
     public readonly updated_at: Date = new Date(),
+    public readonly last_login?: Date,
+    public readonly ip_address?: string,
+    public readonly user_agent?: string,
     public readonly deleted_at?: Date
   ) {}
 
@@ -21,7 +25,14 @@ export class User {
     tipo_usuario: TipoUsuario,
     firebase_uid?: string,
     codigo_institucion?: string,
-    id?: string
+    id?: string,
+    is_active: boolean = true,
+    created_at?: Date,
+    updated_at?: Date,
+    last_login?: Date,
+    ip_address?: string,
+    user_agent?: string,
+    deleted_at?: Date
   ): User {
     return new User(
       id || this.generateId(),
@@ -30,7 +41,14 @@ export class User {
       contraseña,
       tipo_usuario,
       firebase_uid,
-      codigo_institucion
+      codigo_institucion,
+      is_active,
+      created_at ?? new Date(),
+      updated_at ?? new Date(),
+      last_login,
+      ip_address,
+      user_agent,
+      deleted_at
     );
   }
 
@@ -62,8 +80,12 @@ export class User {
       tipo_usuario: this.tipo_usuario,
       firebase_uid: this.firebase_uid,
       codigo_institucion: this.codigo_institucion,
+      is_active: this.is_active,
       created_at: this.created_at,
       updated_at: this.updated_at,
+      last_login: this.last_login,
+      ip_address: this.ip_address,
+      user_agent: this.user_agent,
       deleted_at: this.deleted_at
     };
   }
