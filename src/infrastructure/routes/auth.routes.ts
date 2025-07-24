@@ -8,6 +8,10 @@ import { TutorCode } from '@domain/entities/TutorCode.entity';
 import { FirebaseService } from '@application/services/Firebase.service';
 import { EmailService } from '@application/services/Email.service';
 import { authMiddleware, requireRole, AuthenticatedRequest } from '@infrastructure/middlewares/auth.middleware';
+import { AppointmentService } from '@application/services/Appointment.service';
+import { ChatService } from '@application/services/Chat.service';
+import { GeminiTriajeService } from '@application/services/GeminiTriaje.service';
+import { GetAlumnosWithTriajeUseCase } from '@application/use-cases/GetAlumnosWithTriaje.usecase';
 
 export function createAuthRoutes(): Router {
   const router = Router();
@@ -22,9 +26,19 @@ export function createAuthRoutes(): Router {
   // Casos de uso
   const validateAuthUseCase = new ValidateAuthUseCase(userRepository, emailService, jwtSecret);
   const firebaseAuthUseCase = new FirebaseAuthUseCase(userRepository, firebaseService, emailService, jwtSecret);
+  // Servicios y caso de uso para triaje
+  const appointmentService = new AppointmentService();
+  const chatService = new ChatService();
+  const geminiTriajeService = new GeminiTriajeService();
+  const getAlumnosWithTriajeUseCase = new GetAlumnosWithTriajeUseCase(
+    userRepository,
+    appointmentService,
+    chatService,
+    geminiTriajeService
+  );
   
   // Controlador
-  const authController = new AuthController(validateAuthUseCase, firebaseAuthUseCase);
+  const authController = new AuthController(validateAuthUseCase, firebaseAuthUseCase, getAlumnosWithTriajeUseCase);
 
   /**
    * @swagger
@@ -258,43 +272,7 @@ export function createAuthRoutes(): Router {
    *             schema:
    *               $ref: '#/components/schemas/ErrorResponse'
    */
-  router.get('/users', async (req, res) => {
-    try {
-      const users = await userRepository.findAll();
-      
-      const usersList = users.map((user: any) => ({
-        id: user.id,
-        nombre: user.nombre,
-        correo: user.correo,
-        tipo_usuario: user.tipo_usuario,
-        is_active: user.is_active,
-        created_at: user.created_at,
-        updated_at: user.updated_at,
-        last_login: user.last_login,
-        ip_address: user.ip_address,
-        user_agent: user.user_agent,
-      }));
-
-      res.json({
-        data: {
-          users: usersList,
-          total: usersList.length
-        },
-        message: 'Usuarios obtenidos exitosamente',
-        status: 'success'
-      });
-    } catch (error) {
-      console.error('Error al obtener todos los usuarios:', error);
-      res.status(500).json({
-        data: null,
-        message: 'Error interno del servidor',
-        status: 'error',
-        error: {
-          code: 'INTERNAL_SERVER_ERROR'
-        }
-      });
-    }
-  });
+  router.get('/users', (req, res) => authController.getAlumnosWithTriaje(req, res));
 
   // Endpoint público para obtener todos los tutores
   /**

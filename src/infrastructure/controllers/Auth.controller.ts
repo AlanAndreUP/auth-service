@@ -3,11 +3,13 @@ import { ValidateAuthUseCase } from '@application/use-cases/ValidateAuth.usecase
 import { FirebaseAuthUseCase } from '@application/use-cases/FirebaseAuth.usecase';
 import { ApiResponse, AuthValidateRequest, FirebaseAuthRequest, ErrorResponse } from '@shared/types/response.types';
 import Joi from 'joi';
+import { GetAlumnosWithTriajeUseCase } from '@application/use-cases/GetAlumnosWithTriaje.usecase';
 
 export class AuthController {
   constructor(
     private readonly validateAuthUseCase: ValidateAuthUseCase,
-    private readonly firebaseAuthUseCase: FirebaseAuthUseCase
+    private readonly firebaseAuthUseCase: FirebaseAuthUseCase,
+    private readonly getAlumnosWithTriajeUseCase?: GetAlumnosWithTriajeUseCase
   ) {}
 
   private validateRequest = Joi.object({
@@ -165,4 +167,30 @@ export class AuthController {
       res.status(500).json(errorResponse);
     }
   };
+
+  getAlumnosWithTriaje = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const triaje = req.query.triaje === 'true';
+      if (!this.getAlumnosWithTriajeUseCase) {
+        res.status(500).json({ data: null, message: 'Caso de uso no disponible', status: 'error' });
+        return;
+      }
+      const result = await this.getAlumnosWithTriajeUseCase.execute({ page, limit, triaje });
+      res.json({
+        data: result,
+        message: 'Usuarios obtenidos exitosamente',
+        status: 'success'
+      });
+    } catch (error) {
+      console.error('Error al obtener alumnos con triaje:', error);
+      res.status(500).json({
+        data: null,
+        message: 'Error interno del servidor',
+        status: 'error',
+        error: { code: 'INTERNAL_SERVER_ERROR' }
+      });
+    }
+  }
 } 
