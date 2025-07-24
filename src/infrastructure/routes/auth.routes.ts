@@ -266,7 +266,13 @@ export function createAuthRoutes(): Router {
         id: user.id,
         nombre: user.nombre,
         correo: user.correo,
-        tipo_usuario: user.tipo_usuario
+        tipo_usuario: user.tipo_usuario,
+        is_active: user.is_active,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+        last_login: user.last_login,
+        ip_address: user.ip_address,
+        user_agent: user.user_agent,
       }));
 
       res.json({
