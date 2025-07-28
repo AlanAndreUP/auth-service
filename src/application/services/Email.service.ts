@@ -36,8 +36,8 @@ export class EmailService {
     }
     
     this.resend = new Resend(apiKey);
-    this.fromEmail = process.env.FROM_EMAIL || 'noreply@PsicoDemy.xyz';
-    this.tutorEmail = process.env.TUTOR_EMAIL || 'tutor@PsicoDemy.xyz';
+    this.fromEmail =  'noreply@psicodemy.com';
+    this.tutorEmail = process.env.TUTOR_EMAIL || 'tutor@psicodemy.com';
   }
 
   async sendRegistroExitoso(data: RegistroNotificationData): Promise<void> {

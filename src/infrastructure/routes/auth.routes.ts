@@ -821,6 +821,7 @@ export function createAuthRoutes(): Router {
 
       // Buscar el usuario en el repositorio
       const user = await userRepository.findById(userId);
+      console.log(user);
       
       if (!user) {
         return res.status(404).json({
