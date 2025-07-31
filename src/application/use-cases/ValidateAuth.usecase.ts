@@ -13,7 +13,9 @@ export class ValidateAuthUseCase {
     private readonly jwtSecret: string
   ) {}
 
-  async execute(request: AuthValidateRequest, ip: string, userAgent: string): Promise<AuthValidateResponse> {
+  async execute(request: AuthValidateRequest, 
+    ip: string, 
+    userAgent: string): Promise<AuthValidateResponse> {
     const { correo, contraseña, codigo_institucion } = request;
 
     // Buscar usuario existente

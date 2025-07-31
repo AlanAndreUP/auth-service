@@ -1,199 +1,203 @@
-# 🔐 Auth Service - Microservicio de Autenticación
+# Auth Service - Microservicio de Autenticación
 
-Microservicio de autenticación construido con **TypeScript**, **Express**, **MongoDB** y arquitectura **Hexagonal** siguiendo principios de **DDD**.
+Microservicio de autenticación construido con TypeScript, Express y MongoDB, siguiendo los principios de Domain-Driven Design (DDD) y Clean Architecture.
 
 ## 🚀 Características
 
-- ✅ Registro y login de usuarios (Tutor/Alumno)
-- ✅ Validación con Firebase Auth
-- ✅ JWT para autenticación
-- ✅ Arquitectura Hexagonal (Puertos y Adaptadores)
-- ✅ Domain-Driven Design (DDD)
-- ✅ Validación de datos con Joi
-- ✅ Rate limiting
-- ✅ Seguridad con Helmet
-- ✅ MongoDB con Mongoose
+- **Arquitectura DDD**: Separación clara de dominios, aplicación e infraestructura
+- **Autenticación con Firebase**: Integración completa con Firebase Auth
+- **Base de datos MongoDB**: Persistencia de datos con Mongoose
+- **Validación robusta**: Validación de datos con Joi
+- **Documentación automática**: Swagger/OpenAPI
+- **Testing completo**: Pruebas unitarias, de integración y E2E
+- **Rate Limiting**: Protección contra ataques de fuerza bruta
+- **Logging estructurado**: Trazabilidad completa de operaciones
 
-## 📋 Estructura del Proyecto
+## 📋 Prerrequisitos
 
-```
-src/
-├── domain/                 # Capa de dominio
-│   ├── entities/          # Entidades del dominio
-│   └── repositories/      # Interfaces de repositorios
-├── application/           # Capa de aplicación
-│   └── use-cases/        # Casos de uso
-├── infrastructure/        # Capa de infraestructura
-│   ├── controllers/      # Controladores HTTP
-│   ├── repositories/     # Implementaciones de repositorios
-│   ├── database/         # Modelos y conexión DB
-│   ├── routes/          # Definición de rutas
-│   └── server/          # Configuración del servidor
-└── shared/               # Tipos y utilidades compartidas
-    └── types/           # Definiciones de tipos
-```
-
-## 🔧 Instalación y Uso
-
-### Prerrequisitos
 - Node.js 18+
-- MongoDB
-- npm o yarn
+- MongoDB 6+
+- Docker (opcional)
 
-### Instalación
+## 🛠️ Instalación
+
+1. **Clonar el repositorio**
+```bash
+git clone <repository-url>
+cd auth-service
+```
+
+2. **Instalar dependencias**
 ```bash
 npm install
 ```
 
+3. **Configurar variables de entorno**
+```bash
+cp env.example .env
+# Editar .env con tus configuraciones
+```
+
+4. **Configurar base de datos**
+```bash
+# Asegúrate de que MongoDB esté ejecutándose
+mongod
+```
+
+## 🧪 Testing
+
+### Configuración de Testing
+
+1. **Configurar variables de entorno para testing**
+```bash
+cp env.test.example .env.test
+# Editar .env.test con configuraciones de prueba
+```
+
+2. **Ejecutar pruebas**
+```bash
+# Todas las pruebas
+npm test
+npm test -- --testPathPattern="unit" --verbose
+
+# Pruebas unitarias
+npm run test:unit
+
+# Pruebas de integración
+npm run test:integration
+
+# Pruebas E2E
+npm run test:e2e
+
+# Con cobertura de código
+npm run test:coverage
+
+# Modo watch
+npm run test:watch
+```
+
+### Tipos de Pruebas
+
+- **Unit Tests**: Pruebas de componentes individuales
+- **Integration Tests**: Pruebas de interacción entre componentes
+- **E2E Tests**: Pruebas de flujos completos del sistema
+
+Para más detalles, consulta la [Guía de Testing](docs/TESTING.md).
+
+## 🚀 Desarrollo
+
+### Comandos disponibles
+
+```bash
+# Desarrollo
+npm run dev          # Servidor de desarrollo con hot reload
+npm run build        # Compilar TypeScript
+npm run start        # Ejecutar en producción
+
+# Testing
+npm test             # Ejecutar todas las pruebas
+npm run test:watch   # Modo watch para desarrollo
+npm run test:coverage # Con reporte de cobertura
+
+# Linting
+npm run lint         # Verificar código
+npm run lint:fix     # Corregir problemas automáticamente
+
+# Documentación
+npm run docs:generate # Generar documentación Swagger
+npm run docs:serve   # Servir documentación
+```
+
+### Estructura del proyecto
+
+```
+src/
+├── domain/           # Lógica de dominio (entidades, value objects)
+├── application/      # Casos de uso y servicios de aplicación
+├── infrastructure/   # Implementaciones técnicas (DB, HTTP, etc.)
+└── shared/          # Código compartido entre capas
+
+tests/
+├── unit/            # Pruebas unitarias
+├── integration/     # Pruebas de integración
+├── e2e/            # Pruebas end-to-end
+└── helpers/        # Utilidades de testing
+```
+
+## 📚 Documentación
+
+- [Arquitectura DDD](ARQUITECTURA_DDD.md)
+- [Guía de Testing](docs/TESTING.md)
+- [API Documentation](http://localhost:3001/api-docs) (cuando el servidor esté ejecutándose)
+
+## 🔧 Configuración
+
 ### Variables de Entorno
-Crear archivo `.env` basado en `.env.example`:
 
 ```env
-NODE_ENV=development
+# Base de datos
+MONGODB_URI=mongodb://localhost:27017/auth-service
+
+# JWT
+JWT_SECRET=your-secret-key
+
+# Firebase
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_PRIVATE_KEY=your-private-key
+FIREBASE_CLIENT_EMAIL=your-client-email
+
+# Email
+RESEND_API_KEY=your-resend-api-key
+
+# Servidor
 PORT=3001
-MONGODB_URI=mongodb://localhost:27017/auth_service
-JWT_SECRET=tu-jwt-secreto-super-seguro-aqui
-ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
-LOG_LEVEL=info
-```
-
-### Desarrollo
-```bash
-npm run dev
-```
-
-### Producción
-```bash
-npm run build
-npm start
-```
-
-## 📚 Documentación de la API
-
-La API cuenta con documentación interactiva generada con **Swagger/OpenAPI 3.0**:
-
-🔗 **Swagger UI**: `http://localhost:3001/api-docs`
-📄 **JSON Schema**: `http://localhost:3001/api-docs.json`
-
-### Características de la documentación:
-- ✅ Interfaz interactiva para probar endpoints
-- ✅ Ejemplos de requests y responses
-- ✅ Esquemas de validación detallados
-- ✅ Autenticación JWT integrada
-- ✅ Códigos de error explicados
-
-## 📡 API Endpoints
-
-### POST `/auth/validate`
-Valida usuario desde Firebase y maneja registro/login.
-
-**Request Body:**
-```json
-{
-  "correo": "usuario@example.com",
-  "contraseña": "password_hasheado_de_firebase",
-  "tipo_usuario": "tutor" | "alumno"
-}
-```
-
-**Response (Registro):**
-```json
-{
-  "data": {
-    "isNewUser": true,
-    "userType": "tutor",
-    "userId": "user_id_generado",
-    "token": "jwt_token"
-  },
-  "message": "Tutor registrado exitosamente",
-  "status": "success"
-}
-```
-
-**Response (Login):**
-```json
-{
-  "data": {
-    "isNewUser": false,
-    "userType": "tutor",
-    "userId": "user_id_existente",
-    "token": "jwt_token"
-  },
-  "message": "Tutor autenticado exitosamente",
-  "status": "success"
-}
-```
-
-### GET `/health`
-Health check del servicio.
-
-**Response:**
-```json
-{
-  "data": {
-    "service": "auth-service",
-    "timestamp": "2024-01-01T00:00:00.000Z"
-  },
-  "message": "Servicio de autenticación funcionando correctamente",
-  "status": "success"
-}
+NODE_ENV=development
 ```
 
 ## 🐳 Docker
 
-### Construir imagen
 ```bash
+# Construir imagen
 docker build -t auth-service .
+
+# Ejecutar contenedor
+docker run -p 3001:3001 auth-service
 ```
 
-### Ejecutar contenedor
-```bash
-docker run -p 3001:3001 --env-file .env auth-service
-```
+## 📊 Monitoreo
 
-## 🔐 Seguridad
+El servicio incluye:
+- Logging estructurado
+- Métricas de performance
+- Health checks
+- Rate limiting
 
-- **Rate Limiting**: 100 requests por IP cada 15 minutos
-- **Helmet**: Headers de seguridad HTTP
-- **CORS**: Configurado para dominios específicos
-- **JWT**: Tokens con expiración de 24 horas
-- **Bcrypt**: Hash de contraseñas con salt
+## 🤝 Contribución
 
-## 🗄️ Base de Datos
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
 
-### Modelo de Usuario
-```typescript
-{
-  _id: string;
-  correo: string;
-  contraseña: string; // Hasheada con bcrypt
-  tipo_usuario: 'tutor' | 'alumno';
-  created_at: Date;
-  updated_at: Date;
-  deleted_at?: Date;
-}
-```
+### Guías de contribución
 
-### Índices
-- `correo` (único)
-- `tipo_usuario`
-- `deleted_at`
+- Sigue las convenciones de código establecidas
+- Asegúrate de que todas las pruebas pasen
+- Mantén la cobertura de código > 80%
+- Documenta nuevos endpoints y funcionalidades
 
-## 🧪 Testing
+## 📄 Licencia
 
-```bash
-npm test
-```
+Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para detalles.
 
-## 🚀 Despliegue
+## 🆘 Soporte
 
-Este microservicio está diseñado para desplegarse en AWS con:
-- **Kong API Gateway** para enrutamiento
-- **MongoDB Atlas** para base de datos
-- **Docker** para contenerización
+Para soporte técnico o preguntas:
+- Crear un issue en GitHub
+- Revisar la documentación
+- Consultar los logs del servidor
 
-## 📝 Notas
+---
 
-- Todos los otros microservicios deben validar tokens JWT contra este servicio
-- El frontend maneja la autenticación inicial con Firebase
-- Este servicio almacena y valida usuarios en la base de datos propia # auth-service
+**Nota**: Este es un microservicio de autenticación diseñado para ser parte de una arquitectura de microservicios más grande. Asegúrate de configurar correctamente las variables de entorno y dependencias antes de ejecutar en producción.
